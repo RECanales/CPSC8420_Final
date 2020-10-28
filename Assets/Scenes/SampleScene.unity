@@ -3394,6 +3394,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hand: {fileID: 214258208}
+  scene_obj: {fileID: 1997137472}
   rotate_speed: 2.5
 --- !u!4 &1783497148
 Transform:
@@ -3797,7 +3798,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!135 &1997137473
 SphereCollider:
   m_ObjectHideFlags: 0
