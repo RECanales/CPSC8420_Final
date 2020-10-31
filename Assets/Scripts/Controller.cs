@@ -5,7 +5,8 @@ using UnityEngine;
 public class Controller : MonoBehaviour
 {
     public GameObject hand, scene_obj;
-    public float rotate_speed = 1;
+    public float rotate_speed = 1; // how fast the joints rotate
+    public float move_speed = 1; // how quick the hand moves
     List<Transform> joints = new List<Transform>();
     List<Vector3> thumb_axes = new List<Vector3>();
     List<int> center_indices = new List<int>();
@@ -14,6 +15,7 @@ public class Controller : MonoBehaviour
     float degrees = 0;
     float[] finger_states = new float[5] { 0, 0, 0, 0, 0 };
     int[] finger_indices = new int[5] { 0, 3, 6, 9, 12 };
+    GameObject centerOfHand;
 
     // Start is called before the first frame update
     void Start()
@@ -27,6 +29,7 @@ public class Controller : MonoBehaviour
             thumb_axes.Add(thumb1_axis);
             thumb_axes.Add(thumb2_axis);
             thumb_axes.Add(thumb3_axis);
+            centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
         }
     }
 
@@ -34,7 +37,7 @@ public class Controller : MonoBehaviour
     void Update()
     {
         InputListener();
-
+        centerOfHand.transform.position = GetCenterOfHand();
         /*
         if (joints.Count > 0)
         {
@@ -85,9 +88,21 @@ public class Controller : MonoBehaviour
         if (Input.GetKey(KeyCode.T))
             MoveFinger(4, "close");
         else MoveFinger(4, "open");
+
+        if (Input.GetKey(KeyCode.UpArrow))
+            MoveHand("up");
+
+        if (Input.GetKey(KeyCode.DownArrow))
+            MoveHand("down");
+
+        if (Input.GetKey(KeyCode.RightArrow))
+            MoveHand("right");
+
+        if (Input.GetKey(KeyCode.LeftArrow))
+            MoveHand("left");
     }
 
-    void MoveFinger(int index, string action)
+    public void MoveFinger(int index, string action) // finger index, close/open
     {
         bool rotate = true;
         float sign = action == "close" ? 1 : -1;
@@ -109,6 +124,22 @@ public class Controller : MonoBehaviour
                 //rb.MoveRotation(rb.rotation * deltaRot);
             }
         }
+    }
+
+    void MoveHand(string direction)
+    {
+        if (direction == "up")
+            hand.transform.position += new Vector3(0, move_speed, 0);
+        else if (direction == "down")
+            hand.transform.position += new Vector3(0, -move_speed, 0);
+        else if (direction == "right")
+            hand.transform.position += new Vector3(move_speed, 0, 0);
+        else if (direction == "left")
+            hand.transform.position += new Vector3(-move_speed, 0, 0);
+        else if (direction == "forward")
+            hand.transform.position += new Vector3(0, 0, move_speed);
+        else if (direction == "backward")
+            hand.transform.position += new Vector3(0, 0, -move_speed);
     }
 
     // start from parent object, find all children

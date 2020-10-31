@@ -65,6 +65,8 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\CollisionDetector.cs" />
     <Compile Include="Assets\Scripts\Controller.cs" />
+    <Compile Include="Assets\Scripts\QLearning.cs" />
+    <Compile Include="Assets\Scripts\state.cs" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/Users/canal/Documents/CPSC8420_Final/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
