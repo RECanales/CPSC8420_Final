@@ -126,7 +126,7 @@ public class Controller : MonoBehaviour
         }
     }
 
-    void MoveHand(string direction)
+    public void MoveHand(string direction)
     {
         if (direction == "up")
             hand.transform.position += new Vector3(0, move_speed, 0);
