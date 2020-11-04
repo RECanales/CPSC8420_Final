@@ -34,20 +34,11 @@ public class Controller : MonoBehaviour
         if (hand)
         {
             TraverseHierarchy(hand.transform);
-            for(int i = 0; i < joints.Count; ++i)
-            {
-                if (joints[i].name.Contains("2") || joints[i].name.Contains("3"))
-                {
-                    joints[i].parent = null;
-                    //JointObj parent = joints[i - 1].GetComponent<JointObj>();
-                    //joints[i].GetComponent<JointObj>().UpdateSkeleton(parent.GetMatrix());
-                }
-            }
             for (int i = 0; i < joints.Count; ++i)
                 joints[i].GetComponent<JointObj>().UpdateTransform();
 
             Vector3 thumb1_axis = Vector3.Normalize(joints[thumb_idx].up + joints[thumb_idx].right);
-            Vector3 thumb2_axis = Vector3.Cross(joints[thumb_idx + 1].position-joints[thumb_idx].position, joints[thumb_idx+1].forward);
+            Vector3 thumb2_axis = Vector3.Cross(joints[thumb_idx + 1].position - joints[thumb_idx].position, joints[thumb_idx + 1].forward);
             Vector3 thumb3_axis = thumb2_axis;
             thumb_axes.Add(thumb1_axis);
             thumb_axes.Add(thumb2_axis);
@@ -56,7 +47,48 @@ public class Controller : MonoBehaviour
             original_position = GetCenterOfHand();
             initial_pos = hand.transform.position;
             initial_dist = GetAvgDistFromBall();
+            /*
+            for (int i = 0; i < joints.Count; ++i)
+            {
+                switch (joints[i].name)
+                {
+                    case "thumb_1":
+                        finger_indices[0] = i;
+                        break;
+                    case "index_1":
+                        finger_indices[1] = i;
+                        break;
+                    case "middle_1":
+                        finger_indices[2] = i;
+                        break;
+                    case "ring_1":
+                        finger_indices[3] = i;
+                        break;
+                    case "pinky_1":
+                        finger_indices[4] = i;
+                        break;
+                }
+                //if (joints[i].name.Contains("2") || joints[i].name.Contains("3"))
+                //{
+                //joints[i].parent = null;
+                //JointObj parent = joints[i - 1].GetComponent<JointObj>();
+                //joints[i].GetComponent<JointObj>().UpdateSkeleton(parent.GetMatrix());
+                //}
+            }
+        */
         }
+        
+        //for (int i = 0; i < finger_indices.Length; ++i)
+        //{
+            //int _idx = finger_indices[i];
+            //print(joints[finger_indices[_idx]].GetComponent<JointObj>().GetChild(0).GetPosition());
+            //joints[finger_indices[_idx]].GetComponent<JointObj>().RotateJoint(new Vector3(-40, 0, 0));
+            //Traverse(joints[finger_indices[_idx]].GetComponent<JointObj>());
+            //print(joints[finger_indices[_idx]].GetComponent<JointObj>().GetChild(0).GetPosition());
+            //print(joints[_idx].GetChild(0).position);
+            //joints[_idx].Rotate(new Vector3(40, 0, 0));
+            //print(joints[_idx].GetChild(0).position);
+        //}
     }
 
     // Update is called once per frame
@@ -97,25 +129,25 @@ public class Controller : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            MoveFinger(0, "open");
-            print(finger_states[0]);
+            MoveFinger(finger_indices[0], "close");
+            //print(finger_states[0]);
         }
         //else MoveFinger(0, "open");
 
         if (Input.GetKeyDown(KeyCode.W))
-            MoveFinger(1, "close");
+            MoveFinger(finger_indices[1], "close");
         //else MoveFinger(1, "open");
 
         if (Input.GetKeyDown(KeyCode.E))
-            MoveFinger(2, "close");
+            MoveFinger(finger_indices[2], "close");
         //else MoveFinger(2, "open");
 
         if (Input.GetKeyDown(KeyCode.R))
-            MoveFinger(3, "close");
+            MoveFinger(finger_indices[3], "close");
         //else MoveFinger(3, "open");
 
         if (Input.GetKeyDown(KeyCode.T))
-            MoveFinger(4, "close");
+            MoveFinger(finger_indices[4], "close");
         //else MoveFinger(4, "open");
 
         if (Input.GetKey(KeyCode.UpArrow))
@@ -135,8 +167,8 @@ public class Controller : MonoBehaviour
         //print(IsTerminal());
         //print(GetAvgDistFromBall());
 
-        //for (int i = 0; i < center_indices.Count; ++i)
-         Traverse(joints[0].gameObject.GetComponent<JointObj>());
+        //for (int i = 0; i < joints.Count; ++i)
+            //Traverse(joints[i].gameObject.GetComponent<JointObj>());
         
     }
 
@@ -144,24 +176,40 @@ public class Controller : MonoBehaviour
     {
         bool rotate = true;
         float sign = action == "close" ? 1 : -1;
-        
+
         //if (sign > 0 && finger_states[index] >= 60)
-            //rotate = false;
+        //rotate = false;
 
         //if (sign < 0 && finger_states[index] <= 0)
-            //rotate = false;
-
+        //rotate = false;
+        //print(joints[index].name);
+        //print(joints[index].GetComponent<JointObj>().GetChild(0).gameObject.transform.position);
+        //print(joints[index].GetComponent<JointObj>().GetChild(0).GetTranslation());
         if (rotate)
         {
             finger_states[index] = sign > 0 ? finger_states[index] + rotate_speed : finger_states[index] - rotate_speed;
             for (int i = finger_indices[index]; i < finger_indices[index] + 3; ++i)
             {
+                    joints[i].Rotate(new Vector3(sign * rotate_speed, 0, 0));
+            }
+                /*
+            //for (int i = finger_indices[index]; i < finger_indices[index] + 3; ++i)
+            JointObj joint = joints[index].GetComponent<JointObj>();
+            while (joint != null)
+            {
                 //joints[i].Rotate(sign * rotate_speed, 0, 0);
-                joints[i].GetComponent<JointObj>().RotateJoint(new Vector3(sign * rotate_speed, 0, 0));
+                //joints[index].GetComponent<JointObj>().RotateJoint(new Vector3(sign * rotate_speed, 0, 0));
+
+                joint.RotateJoint(new Vector3(sign * rotate_speed, 0, 0));
+                Traverse(joints[index].GetComponent<JointObj>());
+                //print(joint.GetPosition()); // debug
+               
+                joint = joint.GetChild(0);
+                print(joint.name);
                 //Rigidbody rb = joints[i].gameObject.GetComponent<Rigidbody>();
                 //Quaternion deltaRot = Quaternion.Euler(finger_states[index], 0, 0);
                 //rb.MoveRotation(rb.rotation * deltaRot);
-            }
+            }*/
         }
     }
 
@@ -208,18 +256,21 @@ public class Controller : MonoBehaviour
                     center_indices.Add(joints.Count);
 
                 // add the JointObj script to gameobjects
-                child.gameObject.AddComponent<JointObj>();
-                if (child.parent.name.Contains("1") || child.parent.name.Contains("2"))
-                {
-                    if (!child.parent.GetComponent<JointObj>())
-                        child.parent.gameObject.AddComponent<JointObj>();
-                    child.parent.GetComponent<JointObj>().AddChild(child.GetComponent<JointObj>());
-                    child.parent.GetComponent<JointObj>().SetBoneLength(Vector3.Magnitude(child.position - child.parent.position));
-                    child.GetComponent<JointObj>().SetMatrix(Matrix4x4.TRS(child.position, child.rotation, child.localScale));
-                    if (child.parent.name.Contains("1"))
-                        print(child.position);
+                //child.gameObject.AddComponent<JointObj>();
+                //if (child.parent/*child.parent.name.Contains("1") || child.parent.name.Contains("2")*/)
+                //{
+                    //if (!child.parent.GetComponent<JointObj>())
+                        //child.parent.gameObject.AddComponent<JointObj>();
+                    //child.parent.GetComponent<JointObj>().AddChild(child.GetComponent<JointObj>());
+                    //child.parent.GetComponent<JointObj>().SetBoneLength(Vector3.Magnitude(child.position - child.parent.position));
+                    //child.parent.GetComponent<JointObj>().SetMatrix(Matrix4x4.TRS(child.parent.position, child.parent.rotation, child.parent.localScale));
+                    //child.GetComponent<JointObj>().SetMatrix(Matrix4x4.TRS(child.position, child.rotation, child.localScale));
+                    
+                    //CreateBone(Vector3.Magnitude(child.position - child.parent.position), child.parent, child);
+                    //if (child.parent.name.Contains("1"))
+                    //print(child.position);
                     //child.GetComponent<JointObj>().UpdateSkeleton(child.parent.GetComponent<JointObj>().GetMatrix());
-                }
+                //}
 
                 joints.Add(child);
                 // store original rotations for resetting the hand 
@@ -228,6 +279,19 @@ public class Controller : MonoBehaviour
 
             TraverseHierarchy(child);
         }
+    }
+
+
+    void CreateBone(float boneLength, Transform parentNode, Transform childNode)
+    {
+        GameObject bone = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bone.name = "Bone";
+        //bone.GetComponent<Renderer>().material = boneMat;
+        bone.transform.position = parentNode.position + 0.5f * (childNode.position - parentNode.position);
+        bone.transform.localScale = new Vector3(0.5f, boneLength, 0.5f);
+        bone.transform.up = (childNode.position - parentNode.position).normalized;
+        parentNode.gameObject.GetComponent<JointObj>().boneRef = bone.transform;
+        bone.transform.parent = parentNode;
     }
 
     void Traverse(JointObj startNode)
@@ -245,7 +309,8 @@ public class Controller : MonoBehaviour
         // Push transformations to stack
         Matrix4x4 pushedMatrix = translation * joint.GetMatrix() * rotation * joint.GetMatrix().inverse;    // always rotate selection locally
         matrixStack.Add(pushedMatrix);
-
+        if (!joint)
+            print("NULL");
         while (joint != null)
         {
             // apply transforms to current node
@@ -262,11 +327,10 @@ public class Controller : MonoBehaviour
 
         matrixStack.Clear();
 
-        //for (int i = 0; i < joints.Count; ++i)  // Updates the position & rotation of the gameobject  i.e. render
-        //{
-        //joints[i].GetComponent<JointObj>().UpdateTransform();
-        //}
-        startNode.UpdateTransform();
+        for (int i = 0; i < joints.Count; ++i)  // Updates the position & rotation of the gameobject  i.e. render
+        {
+            joints[i].GetComponent<JointObj>().UpdateTransform();
+        }
     }
 
     public int GetState()
@@ -281,15 +345,15 @@ public class Controller : MonoBehaviour
 
     public bool IsTerminal()
     {
-        /*
+        
         for (int i = 0; i < 5; ++i)
         {
             if (finger_states[i] >= 60)
                 return true;
-            if (finger_states[i] <= 0)
+            if (finger_states[i] < 0)
                 return true;
         }
-        */
+        
         for(int i = 0; i < 2; ++i)
         {
             if (Mathf.Abs(position_state[i]) >= 10) // max movement in one direction
@@ -302,9 +366,10 @@ public class Controller : MonoBehaviour
     public void ResetState()
     {
         hand.transform.position = initial_pos;
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < finger_states.Length; ++i)
         {
             finger_states[i] = 0;
+            position_state[i] = 0;
         }
 
         for(int i = 0; i < joints.Count; ++i)
@@ -342,6 +407,7 @@ public class Controller : MonoBehaviour
             initial_dist = dist;
             return 1;
         }
+
         
         return 0;
     }

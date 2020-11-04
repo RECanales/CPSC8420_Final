@@ -6,7 +6,7 @@ public class CollisionDetector : MonoBehaviour
 {
     // this script is for handling collisions between the fingers and objects in the scene 
     // objects that are to be grasped need a collider attached (convex preferred)
-
+    public int number_contact = 0;
     void Start()
     {
         
@@ -20,6 +20,17 @@ public class CollisionDetector : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        print(collision.collider.name);
+        if (collision.collider.name.Contains("tip"))
+            number_contact++;
+
+        number_contact = Mathf.Min(5, number_contact);
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.collider.name.Contains("tip"))
+            number_contact--;
+
+        number_contact = Mathf.Max(0, number_contact);
     }
 }

@@ -48,6 +48,10 @@ public class QLearning : MonoBehaviour
 
         //print(Random.Range(0, 5)); // random int between 0 and 5 (inclusive)
         //print(Random.Range(0f, 5f)); // floats
+        print("training...");
+        //Q_learn();
+        print("done");
+        
 
     }
 
@@ -96,72 +100,85 @@ public class QLearning : MonoBehaviour
             step(Random.Range(0, 5));
         }*/
 
-        //if(!done)
-            //Q_learn();
-
-        
         /*else
         {
             handControl.ResetState();
         }*/
+
+        if (iteration_number < max_iterations)
+        {
+            Q_learn();
+            handControl.ResetState();
+            iteration_number++;
+            //print(iteration_number);
+        }
+        else
+        {
+            if (!done)
+            {
+                foreach (KeyValuePair<int, int> kvp in pi)
+                {
+                    print(kvp.Key.ToString() + "," + kvp.Value.ToString());
+                }
+            }
+
+            done = true;
+        }
     }
 
     void Q_learn()
     {
         //for (int i = 0; i < max_iterations; ++i)
-        if (iteration_number < max_iterations)
+        //{
+        //handControl.ResetState();
+        int s = handControl.GetState();
+        
+        eps = 1;
+        int c = 0;
+        //print(c);
+        while (true)
         {
-            int s = handControl.GetState();
-            handControl.ResetState();
-            eps = 1;
-            int c = 0;
-            while (true)
+            int action = Random.Range(0, 6); // random action
+            float random_val = Random.value;
+
+            if (random_val > eps)
+                action = GetMaxIndex(Q[s]);
+
+
+            Step(action);
+            int curr_state = handControl.GetState();
+            bool terminal = handControl.IsTerminal();
+            float r = Reward();
+            float target = r;
+            if (!terminal)
             {
-                int action = Random.Range(0, 6); // random action
-                float random_val = Random.value;
-
+                int next_action = Random.Range(0, 6);
                 if (random_val > eps)
-                    action = GetMaxIndex(Q[s]);
+                    next_action = GetMaxIndex(Q[s]);
 
-
-                Step(action);
-                int curr_state = handControl.GetState();
-                bool terminal = handControl.IsTerminal();
-                float r = Reward();
-                float target = r;
-
-                if (terminal)
-                    break;
-
-                else
-                {
-                    int next_action = Random.Range(0, 6);
-                    if (random_val > eps)
-                        next_action = GetMaxIndex(Q[s]);
-
-                    int state = handControl.GetState();
-                    target = r + gamma * Q[state][next_action];
-                }
-
-                Q[s][action] = (1 - alpha) * Q[s][action] + alpha * target;
-                pi[s] = GetMaxIndex(Q[s]);
-                if (s > NUM_STATES)
-                    print(NUM_STATES.ToString() + "," + s.ToString());
-                //print(Q[s][action]);
-                c++;
-                eps = Mathf.Max(0, 1 - (float)c * 0.001f);
-                s = curr_state;
+                int state = handControl.GetState();
+                target = r + gamma * Q[state][next_action];
             }
+
+            Q[s][action] = (1 - alpha) * Q[s][action] + alpha * target;
+            pi[s] = GetMaxIndex(Q[s]);
+            if (s > NUM_STATES)
+                print(NUM_STATES.ToString() + "," + s.ToString());
+            //print(Q[s][action]);
+            c++;
+            eps = Mathf.Max(0, eps * 0.1f);
+            s = curr_state;
+            if (terminal)
+                break;
         }
 
-        else
+       
+        //}
+        /*
+        foreach (KeyValuePair<int, int> kvp in pi)
         {
-
-            print("done");
-            done = true;
-        }
-
-        iteration_number++;
+            print(kvp.Key.ToString() + "," + kvp.Value.ToString());
+        }*/
     }
 
     int GetMaxIndex(List<float> l)
