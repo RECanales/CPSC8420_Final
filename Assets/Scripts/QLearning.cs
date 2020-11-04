@@ -18,7 +18,9 @@ public class QLearning : MonoBehaviour
     //public float pi[NUM_STATES];
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
+    bool done = false;
 
+    int iteration_number = 0;
 
     void Start()
     {
@@ -46,7 +48,6 @@ public class QLearning : MonoBehaviour
 
         //print(Random.Range(0, 5)); // random int between 0 and 5 (inclusive)
         //print(Random.Range(0f, 5f)); // floats
-
 
     }
 
@@ -95,26 +96,35 @@ public class QLearning : MonoBehaviour
             step(Random.Range(0, 5));
         }*/
 
-        Q_learn();
+        //if(!done)
+            //Q_learn();
+
+        
+        /*else
+        {
+            handControl.ResetState();
+        }*/
     }
 
     void Q_learn()
     {
-        for (int i = 0; i < max_iterations; ++i)
+        //for (int i = 0; i < max_iterations; ++i)
+        if (iteration_number < max_iterations)
         {
             int s = handControl.GetState();
             handControl.ResetState();
+            eps = 1;
             int c = 0;
             while (true)
             {
-                int action = Random.Range(0, 5); // random action
+                int action = Random.Range(0, 6); // random action
                 float random_val = Random.value;
 
                 if (random_val > eps)
                     action = GetMaxIndex(Q[s]);
 
-    
-                Step(action);     
+
+                Step(action);
                 int curr_state = handControl.GetState();
                 bool terminal = handControl.IsTerminal();
                 float r = Reward();
@@ -125,7 +135,7 @@ public class QLearning : MonoBehaviour
 
                 else
                 {
-                    int next_action = Random.Range(0, 5);
+                    int next_action = Random.Range(0, 6);
                     if (random_val > eps)
                         next_action = GetMaxIndex(Q[s]);
 
@@ -135,15 +145,23 @@ public class QLearning : MonoBehaviour
 
                 Q[s][action] = (1 - alpha) * Q[s][action] + alpha * target;
                 pi[s] = GetMaxIndex(Q[s]);
-                if(s > NUM_STATES)
+                if (s > NUM_STATES)
                     print(NUM_STATES.ToString() + "," + s.ToString());
                 //print(Q[s][action]);
                 c++;
                 eps = Mathf.Max(0, 1 - (float)c * 0.001f);
+                s = curr_state;
             }
         }
 
-        print("done");
+        else
+        {
+
+            print("done");
+            done = true;
+        }
+
+        iteration_number++;
     }
 
     int GetMaxIndex(List<float> l)
