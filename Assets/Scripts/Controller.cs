@@ -24,6 +24,7 @@ public class Controller : MonoBehaviour
     public GameObject ball;
     float initial_dist = 0;
     List<Quaternion> original_rotation = new List<Quaternion>();
+    Vector3 original_ball_position;
 
     // these are for manual transformations
     List<Matrix4x4> matrixStack = new List<Matrix4x4>();
@@ -34,8 +35,8 @@ public class Controller : MonoBehaviour
         if (hand)
         {
             TraverseHierarchy(hand.transform);
-            for (int i = 0; i < joints.Count; ++i)
-                joints[i].GetComponent<JointObj>().UpdateTransform();
+            //for (int i = 0; i < joints.Count; ++i)
+                //joints[i].GetComponent<JointObj>().UpdateTransform();
 
             Vector3 thumb1_axis = Vector3.Normalize(joints[thumb_idx].up + joints[thumb_idx].right);
             Vector3 thumb2_axis = Vector3.Cross(joints[thumb_idx + 1].position - joints[thumb_idx].position, joints[thumb_idx + 1].forward);
@@ -47,6 +48,7 @@ public class Controller : MonoBehaviour
             original_position = GetCenterOfHand();
             initial_pos = hand.transform.position;
             initial_dist = GetAvgDistFromBall();
+            original_ball_position = scene_obj.transform.position;
             /*
             for (int i = 0; i < joints.Count; ++i)
             {
@@ -77,18 +79,20 @@ public class Controller : MonoBehaviour
             }
         */
         }
-        
+
         //for (int i = 0; i < finger_indices.Length; ++i)
         //{
-            //int _idx = finger_indices[i];
-            //print(joints[finger_indices[_idx]].GetComponent<JointObj>().GetChild(0).GetPosition());
-            //joints[finger_indices[_idx]].GetComponent<JointObj>().RotateJoint(new Vector3(-40, 0, 0));
-            //Traverse(joints[finger_indices[_idx]].GetComponent<JointObj>());
-            //print(joints[finger_indices[_idx]].GetComponent<JointObj>().GetChild(0).GetPosition());
-            //print(joints[_idx].GetChild(0).position);
-            //joints[_idx].Rotate(new Vector3(40, 0, 0));
-            //print(joints[_idx].GetChild(0).position);
+        //int _idx = finger_indices[i];
+        //print(joints[finger_indices[_idx]].GetComponent<JointObj>().GetChild(0).GetPosition());
+        //joints[finger_indices[_idx]].GetComponent<JointObj>().RotateJoint(new Vector3(-40, 0, 0));
+        //Traverse(joints[finger_indices[_idx]].GetComponent<JointObj>());
+        //print(joints[finger_indices[_idx]].GetComponent<JointObj>().GetChild(0).GetPosition());
+        //print(joints[_idx].GetChild(0).position);
+        //joints[_idx].Rotate(new Vector3(40, 0, 0));
+        //print(joints[_idx].GetChild(0).position);
         //}
+
+
     }
 
     // Update is called once per frame
@@ -335,12 +339,34 @@ public class Controller : MonoBehaviour
 
     public int GetState()
     {
-        int x = position_state[0] + 10;
-        int z = position_state[1] + 10;
-        int pos_idx = x + z * 20; // serve as X index
-        int h_idx = (int)(finger_states[0] / rotate_speed); // mod rotation speed
+        // first, position (columns of Q table)
+        int x = (int)Mathf.Min(position_state[0] + 19, 39);
+        int z = (int)Mathf.Min(position_state[1] + 19, 39);
+        if (x < 0)
+            x = 0;
+        if (z < 0)
+            z = 0;
+        int pos_idx = 40 * x + z; // serve as X index (size X*Z)
 
-        return pos_idx + h_idx * 400;
+        // now rotation (rows)
+        int h_idx = (int)Mathf.Min(59/rotate_speed, finger_states[0] / rotate_speed); // 60 degrees for rotate_speed = 1
+        if (h_idx < 0)
+            h_idx = 0;
+        int state_idx = 1600 * h_idx + pos_idx;
+        Debug.Assert(state_idx < 96000);
+        return state_idx;
+    }
+
+    public bool FingersClosed()
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            // all the way closed, all the way open
+            if (finger_states[i] >= 60/* || finger_states[i] <= 0*/)
+                return true;
+        }
+
+        return false;
     }
 
     public bool IsTerminal()
@@ -348,15 +374,15 @@ public class Controller : MonoBehaviour
         
         for (int i = 0; i < 5; ++i)
         {
-            if (finger_states[i] >= 60)
-                return true;
-            if (finger_states[i] < 0)
+            // all the way closed, all the way open
+            if (finger_states[i] >= 60/* || finger_states[i] <= 0*/)
                 return true;
         }
         
         for(int i = 0; i < 2; ++i)
         {
-            if (Mathf.Abs(position_state[i]) >= 10) // max movement in one direction
+            // max movement in one direction
+            if (Mathf.Abs(position_state[i]) > 19)
                 return true;
         }
 
@@ -366,16 +392,19 @@ public class Controller : MonoBehaviour
     public void ResetState()
     {
         hand.transform.position = initial_pos;
-        for (int i = 0; i < finger_states.Length; ++i)
-        {
-            finger_states[i] = 0;
-            position_state[i] = 0;
-        }
-
-        for(int i = 0; i < joints.Count; ++i)
+        for (int i = 0; i < joints.Count; ++i)
         {
             joints[i].rotation = original_rotation[i];
         }
+        
+        for (int i = 0; i < finger_states.Length; ++i)
+        {
+            finger_states[i] = 0;
+        }
+
+        position_state[0] = 0;
+        position_state[1] = 0;
+        scene_obj.transform.position = original_ball_position;
     }
 
     public Vector3 GetCenterOfHand()
@@ -397,6 +426,7 @@ public class Controller : MonoBehaviour
         }
 
         //return 1/(1+dist);
+        
         if (dist > initial_dist)
         {
             initial_dist = dist;

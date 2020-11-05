@@ -21,11 +21,12 @@ public class QLearning : MonoBehaviour
     bool done = false;
 
     int iteration_number = 0;
+    bool stop_animation = false;
 
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
-        NUM_STATES = 400 * (int)(60 / handControl.rotate_speed);
+        NUM_STATES = 1600 * (int)(60 / handControl.rotate_speed);
         //NUM_STATES = 400 * 30;
         print("Number of states = " + NUM_STATES.ToString());
 
@@ -33,7 +34,7 @@ public class QLearning : MonoBehaviour
         for(int i = 0; i < NUM_STATES; ++i)
         {
             Q.Add(new List<float> { 0, 0, 0, 0, 0, 0 });
-
+            pi.Add(i, 0);
             //print(Q[i][0].ToString() + "," + Q[i][1].ToString());
         }
 
@@ -48,11 +49,6 @@ public class QLearning : MonoBehaviour
 
         //print(Random.Range(0, 5)); // random int between 0 and 5 (inclusive)
         //print(Random.Range(0f, 5f)); // floats
-        print("training...");
-        //Q_learn();
-        print("done");
-        
-
     }
 
     void Step(int action)
@@ -107,22 +103,30 @@ public class QLearning : MonoBehaviour
 
         if (iteration_number < max_iterations)
         {
-            Q_learn();
             handControl.ResetState();
+            Q_learn();
+            
             iteration_number++;
             //print(iteration_number);
         }
+
         else
         {
             if (!done)
             {
-                foreach (KeyValuePair<int, int> kvp in pi)
-                {
-                    print(kvp.Key.ToString() + "," + kvp.Value.ToString());
-                }
+                print("DONE");
+                handControl.ResetState();
+                objects[0].GetComponent<Rigidbody>().isKinematic = false;
             }
-
             done = true;
+
+            if (!stop_animation)
+            {
+                int action = pi[handControl.GetState()];
+                Step(action);
+            }
+            if (handControl.FingersClosed())
+                stop_animation = true;
         }
     }
 
@@ -130,21 +134,24 @@ public class QLearning : MonoBehaviour
     {
         //for (int i = 0; i < max_iterations; ++i)
         //{
-        //handControl.ResetState();
+        
         int s = handControl.GetState();
         
-        eps = 1;
+        //eps = 1;
         int c = 0;
         //print(c);
         while (true)
         {
-            int action = Random.Range(0, 6); // random action
+            Debug.Assert(s < Q.Count);
+            int action = Random.Range(0, NUM_ACTIONS); // random action
             float random_val = Random.value;
-
+            
+            // no index issue
             if (random_val > eps)
                 action = GetMaxIndex(Q[s]);
 
-
+            Debug.Assert(action < Q[0].Count);
+            
             Step(action);
             int curr_state = handControl.GetState();
             bool terminal = handControl.IsTerminal();
@@ -152,23 +159,29 @@ public class QLearning : MonoBehaviour
             float target = r;
             if (!terminal)
             {
-                int next_action = Random.Range(0, 6);
+                int next_action = Random.Range(0, NUM_ACTIONS);
                 if (random_val > eps)
                     next_action = GetMaxIndex(Q[s]);
 
                 int state = handControl.GetState();
+                Debug.Assert(state < Q.Count);
+                // no index issue
                 target = r + gamma * Q[state][next_action];
             }
 
             Q[s][action] = (1 - alpha) * Q[s][action] + alpha * target;
+
+            Debug.Assert(s < pi.Keys.Count);
             pi[s] = GetMaxIndex(Q[s]);
             if (s > NUM_STATES)
                 print(NUM_STATES.ToString() + "," + s.ToString());
             //print(Q[s][action]);
             c++;
-            eps = Mathf.Max(0, eps * 0.1f);
+            eps = Mathf.Max(0, eps * 0.99999f);
+            //print(eps);
+            
             s = curr_state;
-            if (terminal)
+            if (terminal || c > 1000)
                 break;
         }
 
@@ -193,8 +206,7 @@ public class QLearning : MonoBehaviour
                 max_val = l[i];
             }
         }
-        if (max_idx > 5)
-            print("ASDASDASDASD");
+        Debug.Assert(max_idx < NUM_ACTIONS);
         return max_idx;
     }
 
