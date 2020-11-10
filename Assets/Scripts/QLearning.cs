@@ -177,15 +177,13 @@ public class QLearning : MonoBehaviour
                 print(NUM_STATES.ToString() + "," + s.ToString());
             //print(Q[s][action]);
             c++;
-            eps = Mathf.Max(0, eps * 0.99999f);
-            //print(eps);
+            eps = Mathf.Max(0, eps * 0.999995f);
             
             s = curr_state;
             if (terminal || c > 1000)
                 break;
         }
 
-       
         //}
         /*
         foreach (KeyValuePair<int, int> kvp in pi)
