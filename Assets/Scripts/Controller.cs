@@ -47,7 +47,12 @@ public class Controller : MonoBehaviour
             centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
             original_position = GetCenterOfHand();
             initial_pos = hand.transform.position;
-            initial_dist = GetAvgDistFromBall();
+            foreach (Transform t in joints)
+            {
+                if (t.name.Contains("3"))
+                    initial_dist += Vector3.Magnitude(t.position - scene_obj.transform.position);
+            }
+            //initial_dist = GetAvgDistFromBall();
             original_ball_position = scene_obj.transform.position;
             /*
             for (int i = 0; i < joints.Count; ++i)
@@ -352,7 +357,7 @@ public class Controller : MonoBehaviour
         int h_idx = (int)Mathf.Min(59/rotate_speed, finger_states[0] / rotate_speed); // 60 degrees for rotate_speed = 1
         if (h_idx < 0)
             h_idx = 0;
-        int state_idx = 1600 * h_idx + pos_idx;
+        int state_idx = 1600 * h_idx + pos_idx; // considering all the fingers move independently.
         Debug.Assert(state_idx < 96000);
         return state_idx;
     }
@@ -368,6 +373,23 @@ public class Controller : MonoBehaviour
 
         return false;
     }
+
+    public bool FingersClosing()
+    {
+        bool allfive = false;
+        for (int i = 0; i < 5; ++i)
+        {
+            // half way or more than half way closed
+            if (finger_states[i] >= 30)
+                allfive = true;
+            else
+                allfive = false;
+        }
+
+        return allfive;
+    }
+
+
 
     public bool IsTerminal()
     {

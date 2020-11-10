@@ -13,7 +13,7 @@ public class QLearning : MonoBehaviour
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
-    public int max_iterations = 5000;
+    public int max_iterations = 1000;
     //public float v[NUM_STATES][NUM_ACTIONS];
     //public float pi[NUM_STATES];
     List<List<float>> Q = new List<List<float>>();  // Q values
@@ -180,7 +180,7 @@ public class QLearning : MonoBehaviour
             eps = Mathf.Max(0, eps * 0.999995f);
             
             s = curr_state;
-            if (terminal || c > 1000)
+            if (terminal || c > 100)
                 break;
         }
 
