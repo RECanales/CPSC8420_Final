@@ -9,7 +9,7 @@ public class QLearning : MonoBehaviour
     Controller handControl;
     List<Transform> objects = new List<Transform>();
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
-    int NUM_ACTIONS = 6; // move hand in some direction, rotate fingers in/out
+    int NUM_ACTIONS = 5; // move hand in some direction, rotate fingers in
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
@@ -20,8 +20,13 @@ public class QLearning : MonoBehaviour
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
     bool done = false;
 
-    int iteration_number = 0;
+    public int iteration_number = 0;
     bool stop_animation = false;
+    public bool episode_done = true;
+    public int episode_loop = 0;
+    public int initial_state = 0;
+    float CountDown = 2;
+    List<int> stored_states = new List<int>(); // store the sequence of states/actions after policy learned
 
     void Start()
     {
@@ -33,7 +38,7 @@ public class QLearning : MonoBehaviour
         // init all Q values to 0
         for(int i = 0; i < NUM_STATES; ++i)
         {
-            Q.Add(new List<float> { 0, 0, 0, 0, 0, 0 });
+            Q.Add(new List<float> { 0, 0, 0, 0, 0 });
             pi.Add(i, 0);
             //print(Q[i][0].ToString() + "," + Q[i][1].ToString());
         }
@@ -41,7 +46,6 @@ public class QLearning : MonoBehaviour
         //handControl.GetCenterOfHand(); // get the hand position (near center of palm)
         GameObject testObj = GameObject.Find("Sphere");
         objects.Add(testObj.transform);
-
         // example of distance (between ball and hand)
         //float dist = Vector3.Magnitude(objects[0].position - handControl.GetCenterOfHand());
         //print(objects[0].rotation); // Quaternion
@@ -78,10 +82,10 @@ public class QLearning : MonoBehaviour
             case 5:
                 // open
                 handControl.MoveFinger(0, "open");
-                handControl.MoveFinger(1, "open");
-                handControl.MoveFinger(2, "open");
-                handControl.MoveFinger(3, "open");
-                handControl.MoveFinger(4, "open");
+                //handControl.MoveFinger(1, "open");
+                //handControl.MoveFinger(2, "open");
+                //handControl.MoveFinger(3, "open");
+                //handControl.MoveFinger(4, "open");
                 break;
         }
     }
@@ -103,10 +107,22 @@ public class QLearning : MonoBehaviour
 
         if (iteration_number < max_iterations)
         {
-            handControl.ResetState();
-            Q_learn();
+            //handControl.ResetState();
+            //Q_learn();
             
-            iteration_number++;
+            if (episode_done)
+            {
+                episode_done = false;
+                episode_loop = 0;
+                handControl.ResetState();
+                initial_state = handControl.GetState();
+                //int s = handControl.GetState();
+                //Q_learn_physics(s);
+                StartCoroutine("QLearn");
+                iteration_number++;
+            }
+            
+            //iteration_number++;
             //print(iteration_number);
         }
 
@@ -116,18 +132,90 @@ public class QLearning : MonoBehaviour
             {
                 print("DONE");
                 handControl.ResetState();
+                print(handControl.GetState());
                 objects[0].GetComponent<Rigidbody>().isKinematic = false;
             }
+
             done = true;
+
+
 
             if (!stop_animation)
             {
-                int action = pi[handControl.GetState()];
+                int hand_state = handControl.GetState();
+                int action = pi[hand_state];
+                //stored_states.Add(hand_state);
                 Step(action);
             }
-            if (handControl.FingersClosed())
+
+            if (handControl.IsTerminal() && !stop_animation)
+            {
                 stop_animation = true;
+                StartCoroutine("timer");
+                //stop_animation = false; // loop animation
+            }
         }
+    }
+
+    IEnumerator timer()
+    {
+        yield return new WaitForSeconds(CountDown);
+        handControl.ResetState();
+        print(handControl.GetState());
+
+        stop_animation = false;
+    }
+
+    IEnumerator QLearn()
+    {
+        while(!episode_done && episode_loop < 500)
+        {
+            int s = initial_state;
+            Debug.Assert(s < Q.Count);
+            int action = Random.Range(0, NUM_ACTIONS); // random action
+            float random_val = Random.value;
+
+            // no index issue
+            if (random_val > eps)
+                action = GetMaxIndex(Q[s]);
+
+            Debug.Assert(action < Q[0].Count);
+
+            Step(action);
+            int curr_state = handControl.GetState();
+            bool terminal = handControl.IsTerminal();
+            float r = Reward();
+            float target = r;
+            if (!terminal)
+            {
+                int next_action = Random.Range(0, NUM_ACTIONS);
+                if (random_val > eps)
+                    next_action = GetMaxIndex(Q[s]);
+
+                int state = handControl.GetState();
+                Debug.Assert(state < Q.Count);
+                // no index issue
+                target = r + gamma * Q[state][next_action];
+            }
+
+            Q[s][action] = (1 - alpha) * Q[s][action] + alpha * target;
+
+            Debug.Assert(s < pi.Keys.Count);
+            pi[s] = GetMaxIndex(Q[s]);
+            if (s > NUM_STATES)
+                print(NUM_STATES.ToString() + "," + s.ToString());
+            //print(Q[s][action]);
+            episode_loop++;
+            eps = Mathf.Max(0, eps * 0.99997f);
+
+            initial_state = curr_state;
+            episode_done = terminal;
+            if (terminal)
+                yield break;
+            yield return new WaitForFixedUpdate();
+        }
+
+        yield return null;
     }
 
     void Q_learn()
@@ -180,7 +268,8 @@ public class QLearning : MonoBehaviour
             eps = Mathf.Max(0, eps * 0.999995f);
             
             s = curr_state;
-            if (terminal || c > 100)
+            episode_done = terminal;
+            if (terminal || c > 300)
                 break;
         }
 
