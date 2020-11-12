@@ -7,9 +7,9 @@ public class QLearning : MonoBehaviour
 {
     public GameObject controller;
     Controller handControl;
-    List<Transform> objects = new List<Transform>();
+    public GameObject scene_obj;
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
-    int NUM_ACTIONS = 5; // move hand in some direction, rotate fingers in
+    int NUM_ACTIONS = 7; // move hand in some direction, rotate fingers in
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
@@ -27,32 +27,21 @@ public class QLearning : MonoBehaviour
     public int initial_state = 0;
     float CountDown = 2;
     List<int> stored_states = new List<int>(); // store the sequence of states/actions after policy learned
+    float avg = 0;
+    int total_loops = 0;
 
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
-        NUM_STATES = 1600 * (int)(60 / handControl.rotate_speed);
-        //NUM_STATES = 400 * 30;
+        NUM_STATES = 1600 * (int)(60 / handControl.rotate_speed) * 4;
         print("Number of states = " + NUM_STATES.ToString());
 
         // init all Q values to 0
         for(int i = 0; i < NUM_STATES; ++i)
         {
-            Q.Add(new List<float> { 0, 0, 0, 0, 0 });
+            Q.Add(new List<float> { 0, 0, 0, 0, 0, 0, 0});
             pi.Add(i, 0);
-            //print(Q[i][0].ToString() + "," + Q[i][1].ToString());
         }
-
-        //handControl.GetCenterOfHand(); // get the hand position (near center of palm)
-        GameObject testObj = GameObject.Find("Sphere");
-        objects.Add(testObj.transform);
-        // example of distance (between ball and hand)
-        //float dist = Vector3.Magnitude(objects[0].position - handControl.GetCenterOfHand());
-        //print(objects[0].rotation); // Quaternion
-        //print(objects[0].rotation.eulerAngles); // degrees x, y, z rotation
-
-        //print(Random.Range(0, 5)); // random int between 0 and 5 (inclusive)
-        //print(Random.Range(0f, 5f)); // floats
     }
 
     void Step(int action)
@@ -80,12 +69,11 @@ public class QLearning : MonoBehaviour
                 handControl.MoveFinger(4, "close");
                 break;
             case 5:
-                // open
-                handControl.MoveFinger(0, "open");
-                //handControl.MoveFinger(1, "open");
-                //handControl.MoveFinger(2, "open");
-                //handControl.MoveFinger(3, "open");
-                //handControl.MoveFinger(4, "open");
+                // adjust grip open
+                handControl.AdjustGrip(1);
+                break;
+            case 6:
+                handControl.AdjustGrip(-1);
                 break;
         }
     }
@@ -133,12 +121,10 @@ public class QLearning : MonoBehaviour
                 print("DONE");
                 handControl.ResetState();
                 print(handControl.GetState());
-                objects[0].GetComponent<Rigidbody>().isKinematic = false;
+                scene_obj.GetComponent<Rigidbody>().isKinematic = false;
             }
 
             done = true;
-
-
 
             if (!stop_animation)
             {
@@ -168,7 +154,7 @@ public class QLearning : MonoBehaviour
 
     IEnumerator QLearn()
     {
-        while(!episode_done && episode_loop < 500)
+        while(!episode_done)
         {
             int s = initial_state;
             Debug.Assert(s < Q.Count);
@@ -206,10 +192,14 @@ public class QLearning : MonoBehaviour
                 print(NUM_STATES.ToString() + "," + s.ToString());
             //print(Q[s][action]);
             episode_loop++;
-            eps = Mathf.Max(0, eps * 0.99997f);
+            //++;
+            //float eps_multiplier = 1 - avg; 
+            eps = Mathf.Max(0, eps * 0.99999f);
 
             initial_state = curr_state;
             episode_done = terminal;
+            if (episode_loop > 500)
+                episode_done = true;
             if (terminal)
                 yield break;
             yield return new WaitForFixedUpdate();
