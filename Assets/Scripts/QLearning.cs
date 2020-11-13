@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 //using System.Diagnostics.Eventing.Reader;
+using System.IO;
 using UnityEngine;
 
 public class QLearning : MonoBehaviour
@@ -19,7 +20,7 @@ public class QLearning : MonoBehaviour
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
     bool done = false;
-
+    bool written = false;
     public int iteration_number = 0;
     bool stop_animation = false;
     public bool episode_done = true;
@@ -116,6 +117,20 @@ public class QLearning : MonoBehaviour
 
         else
         {
+            if (!written) 
+            {
+                //Writing the policy to a .csv file.
+                using (var writer = new StreamWriter("Grasping_Policy.csv"))
+                {
+                    foreach (var pair in pi)
+                    {
+                        writer.WriteLine("{0},{1},", pair.Key, pair.Value);
+                    }
+                }
+                print("Learned Policy has been written to Grasping_Policy.csv file.");
+                written = true;
+            }
+
             if (!done)
             {
                 print("DONE");
@@ -130,6 +145,7 @@ public class QLearning : MonoBehaviour
             {
                 int hand_state = handControl.GetState();
                 int action = pi[hand_state];
+                //print($"State {hand_state} Action {action}");
                 //stored_states.Add(hand_state);
                 Step(action);
             }
