@@ -19,13 +19,16 @@ public class QLearning : MonoBehaviour
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
     bool done = false;
+    bool start_training = false;
 
     public int iteration_number = 0;
     bool stop_animation = false;
     public bool episode_done = true;
     public int episode_loop = 0;
     public int initial_state = 0;
+    float initial_dist = 0;
     float CountDown = 2;
+
     List<int> stored_states = new List<int>(); // store the sequence of states/actions after policy learned
     float avg = 0;
     int total_loops = 0;
@@ -42,6 +45,9 @@ public class QLearning : MonoBehaviour
             Q.Add(new List<float> { 0, 0, 0, 0, 0, 0, 0});
             pi.Add(i, 0);
         }
+
+        scene_obj.AddComponent<CollisionDetector>();
+
     }
 
     void Step(int action)
@@ -93,58 +99,71 @@ public class QLearning : MonoBehaviour
             handControl.ResetState();
         }*/
 
-        if (iteration_number < max_iterations)
+        if (!start_training && handControl.ready)
         {
-            //handControl.ResetState();
-            //Q_learn();
-            
-            if (episode_done)
-            {
-                episode_done = false;
-                episode_loop = 0;
-                handControl.ResetState();
-                initial_state = handControl.GetState();
-                //int s = handControl.GetState();
-                //Q_learn_physics(s);
-                StartCoroutine("QLearn");
-                iteration_number++;
-            }
-            
-            //iteration_number++;
-            //print(iteration_number);
+            initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+            start_training = true;
         }
-
         else
         {
-            if (!done)
+
+            if (iteration_number < max_iterations)
             {
-                print("DONE");
-                handControl.ResetState();
-                print(handControl.GetState());
-                scene_obj.GetComponent<Rigidbody>().isKinematic = false;
+                //handControl.ResetState();
+                //Q_learn();
+
+                //if (episode_done)
+                //{
+                    //episode_done = false;
+                    episode_loop = 0;
+                    handControl.ResetState();
+                    initial_state = handControl.GetState();
+                    //int s = handControl.GetState();
+                    //Q_learn_physics(s);
+                    //StartCoroutine("PhysicsQLearn");
+                    PhysicsQLearn();
+                    iteration_number++;
+                //}
+
+                //iteration_number++;
+                //print(iteration_number);
             }
 
-            done = true;
-
-            if (!stop_animation)
+            else
             {
-                int hand_state = handControl.GetState();
-                int action = pi[hand_state];
-                //stored_states.Add(hand_state);
-                Step(action);
-            }
+                if (!done)
+                {
+                    print("DONE");
+                    handControl.ResetState();
+                    print(handControl.GetState());
+                    scene_obj.GetComponent<Rigidbody>().isKinematic = false;
+                    //StopCoroutine("PhysicsQLearn");
+                    done = true;
+                }
 
-            if (handControl.IsTerminal() && !stop_animation)
-            {
-                stop_animation = true;
-                StartCoroutine("timer");
-                //stop_animation = false; // loop animation
+                
+
+                if (!stop_animation)
+                {
+                    int hand_state = handControl.GetState();
+                    int action = pi[hand_state];
+                    //stored_states.Add(hand_state);
+                    Step(action);
+                }
+
+                if (handControl.IsTerminal() && !stop_animation)
+                {
+                    stop_animation = true;
+                    StartCoroutine("timer");
+                    //stop_animation = false; // loop animation
+                }
             }
         }
     }
 
     IEnumerator timer()
     {
+        print("CROUTINE");
         yield return new WaitForSeconds(CountDown);
         handControl.ResetState();
         print(handControl.GetState());
@@ -152,9 +171,10 @@ public class QLearning : MonoBehaviour
         stop_animation = false;
     }
 
-    IEnumerator QLearn()
+    //IEnumerator PhysicsQLearn()
+    void PhysicsQLearn()
     {
-        while(!episode_done)
+        while(true)
         {
             int s = initial_state;
             Debug.Assert(s < Q.Count);
@@ -194,18 +214,20 @@ public class QLearning : MonoBehaviour
             episode_loop++;
             //++;
             //float eps_multiplier = 1 - avg; 
-            eps = Mathf.Max(0, eps * 0.99999f);
+            eps = Mathf.Max(0, eps * 0.999998f);
 
             initial_state = curr_state;
             episode_done = terminal;
             if (episode_loop > 500)
                 episode_done = true;
-            if (terminal)
-                yield break;
-            yield return new WaitForFixedUpdate();
+            //if (terminal)
+            //yield break;
+            //yield return new WaitForFixedUpdate();
+            if (episode_done)
+                break;
         }
 
-        yield return null;
+        //yield return null;
     }
 
     void Q_learn()
@@ -289,6 +311,9 @@ public class QLearning : MonoBehaviour
 
     float Reward()
     {
-        return handControl.GetAvgDistFromBall(); //+ Vector3.Magnitude(handControl.GetCenterOfHand() - objects[0].position);
+        float dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+            //print(1 - dist / initial_dist);
+        return 1 - dist/initial_dist;
+        //return scene_obj.GetComponent<CollisionDetector>().number_contact / 5f;
     }
 }

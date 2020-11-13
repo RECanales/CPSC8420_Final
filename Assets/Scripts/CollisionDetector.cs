@@ -12,18 +12,13 @@ public class CollisionDetector : MonoBehaviour
         
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.collider.name.Contains("tip"))
             number_contact++;
 
         number_contact = Mathf.Min(5, number_contact);
+        //print("OnCollisionEnter " + number_contact.ToString());
     }
 
     private void OnCollisionExit(Collision collision)
@@ -32,5 +27,6 @@ public class CollisionDetector : MonoBehaviour
             number_contact--;
 
         number_contact = Mathf.Max(0, number_contact);
+        //print("OnCollisionExit " + number_contact.ToString());
     }
 }

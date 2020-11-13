@@ -29,6 +29,7 @@ public class Controller : MonoBehaviour
     List<Quaternion> original_rotation = new List<Quaternion>();
     Vector3 original_obj_position;
     Quaternion original_obj_rotation;
+    public bool ready = false;
 
     // Start is called before the first frame update
     void Start()
@@ -77,6 +78,7 @@ public class Controller : MonoBehaviour
             original_obj_rotation = scene_obj.transform.rotation;
         }
         ResetState();
+        ready = true;
     }
 
     // Update is called once per frame
@@ -273,7 +275,7 @@ public class Controller : MonoBehaviour
             h_idx = 0;
 
         // open or closed (hand spread)
-        h_idx = 2 * h_idx + grip_state; // number rotations X 2 columns (grip types)
+        h_idx = 4 * h_idx + grip_state; // number rotations X 2 columns (grip types)
         int state_idx = 1600 * h_idx + pos_idx; // considering all the fingers move independently.
         Debug.Assert(state_idx < 1600 * (int)(60/rotate_speed) * 4);
         return state_idx;

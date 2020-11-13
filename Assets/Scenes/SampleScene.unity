@@ -2985,7 +2985,7 @@ MonoBehaviour:
   gamma: 0.95
   eps: 1
   alpha: 0.1
-  max_iterations: 2000
+  max_iterations: 6000
   iteration_number: 0
   episode_done: 1
   episode_loop: 0
@@ -7331,6 +7331,7 @@ MonoBehaviour:
   max_stretch: 15
   max_dist: 0
   ball: {fileID: 0}
+  ready: 0
 --- !u!4 &1783497148
 Transform:
   m_ObjectHideFlags: 0
