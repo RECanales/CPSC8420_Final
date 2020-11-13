@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 //using System.Diagnostics.Eventing.Reader;
+using System.IO;
 using UnityEngine;
 
 public class QLearning : MonoBehaviour
@@ -19,7 +20,11 @@ public class QLearning : MonoBehaviour
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
     bool done = false;
+
     bool start_training = false;
+
+
+    bool written = false;
 
     public int iteration_number = 0;
     bool stop_animation = false;
@@ -99,14 +104,14 @@ public class QLearning : MonoBehaviour
             handControl.ResetState();
         }*/
 
-        if (!start_training && handControl.ready)
+        if (!start_training && handControl.ready) // makes sure hand is intialized before training
         {
             initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
             start_training = true;
         }
+
         else
         {
-
             if (iteration_number < max_iterations)
             {
                 //handControl.ResetState();
@@ -118,15 +123,10 @@ public class QLearning : MonoBehaviour
                     episode_loop = 0;
                     handControl.ResetState();
                     initial_state = handControl.GetState();
-                    //int s = handControl.GetState();
-                    //Q_learn_physics(s);
                     //StartCoroutine("PhysicsQLearn");
                     PhysicsQLearn();
                     iteration_number++;
                 //}
-
-                //iteration_number++;
-                //print(iteration_number);
             }
 
             else
@@ -138,10 +138,25 @@ public class QLearning : MonoBehaviour
                     print(handControl.GetState());
                     scene_obj.GetComponent<Rigidbody>().isKinematic = false;
                     //StopCoroutine("PhysicsQLearn");
+					
+					// RC moved this here
+					if (!written) 
+					{
+						//Writing the policy to a .csv file.
+						using (var writer = new StreamWriter("Grasping_Policy.csv"))
+						{
+							foreach (var pair in pi)
+							{
+								writer.WriteLine("{0},{1},", pair.Key, pair.Value);
+							}
+						}
+
+						print("Learned Policy has been written to Grasping_Policy.csv file.");
+						written = true; // do not need this since we have the done variable
+					}
+
                     done = true;
                 }
-
-                
 
                 if (!stop_animation)
                 {
