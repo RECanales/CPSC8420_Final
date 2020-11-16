@@ -17,7 +17,7 @@ public class Controller : MonoBehaviour
     bool stop_rotate = false;
     float degrees = 0;
     float[] finger_states = new float[5] { 0, 0, 0, 0, 0 }; // add an index for opening thumb action
-    int[] position_state = new int[2] { 0, 0 };   // left /right, forward / backward
+    public int[] position_state = new int[2] { 0, 0 };   // left /right, forward / backward
     int grip_state = 1;
     int[] finger_indices = new int[5] { 0, 3, 6, 9, 12 };
     GameObject centerOfHand;
