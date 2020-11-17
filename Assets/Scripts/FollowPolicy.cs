@@ -92,7 +92,7 @@ public class FollowPolicy: MonoBehaviour
             //stop_animation = false; // loop animation
 
             // Moving the hand to a certain position.
-            print("Hand at terminal state");
+            //print("Hand at terminal state");
         }
         if (!move)
         {

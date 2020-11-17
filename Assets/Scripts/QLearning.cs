@@ -92,18 +92,6 @@ public class QLearning : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
-        //s_, r, terminal, info = env.step(chosen_action)
-        /*for (int i = 0; i < 6; i++)
-        {
-            step(Random.Range(0, 5));
-        }*/
-
-        /*else
-        {
-            handControl.ResetState();
-        }*/
-
         if (!start_training && handControl.ready) // makes sure hand is intialized before training
         {
             initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
@@ -178,7 +166,6 @@ public class QLearning : MonoBehaviour
 
     IEnumerator timer()
     {
-        print("CROUTINE");
         yield return new WaitForSeconds(CountDown);
         handControl.ResetState();
         print(handControl.GetState());
@@ -225,9 +212,8 @@ public class QLearning : MonoBehaviour
             pi[s] = GetMaxIndex(Q[s]);
             if (s > NUM_STATES)
                 print(NUM_STATES.ToString() + "," + s.ToString());
-            //print(Q[s][action]);
+
             episode_loop++;
-            //++;
             //float eps_multiplier = 1 - avg; 
             eps = Mathf.Max(0, eps * 0.999998f);
 

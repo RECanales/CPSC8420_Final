@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Controller : MonoBehaviour
 {
-    public GameObject hand, scene_obj;
+    public GameObject hand, scene_obj, target;
     public float rotate_speed = 1; // how fast the joints rotate
     public float move_speed = 1; // how quick the hand moves
     public float max_stretch = 0;
@@ -24,7 +24,6 @@ public class Controller : MonoBehaviour
     bool terminal = false;
 
     Vector3 original_position, initial_pos; // original = center, initial = root
-    public GameObject ball;
     float initial_dist = 0;
     List<Quaternion> original_rotation = new List<Quaternion>();
     Vector3 original_obj_position;
@@ -86,7 +85,7 @@ public class Controller : MonoBehaviour
     {
 
         InputListener();
-        centerOfHand.transform.position = GetCenterOfHand();
+        //centerOfHand.transform.position = GetCenterOfHand();
         /*
         if (joints.Count > 0)
         {
@@ -170,6 +169,21 @@ public class Controller : MonoBehaviour
         //for (int i = 0; i < joints.Count; ++i)
         //Traverse(joints[i].gameObject.GetComponent<JointObj>());
 
+    }
+
+    public void MoveOverTarget()
+    {
+        // translate the hand to be over the target
+        Vector3 target_position, current_position;
+
+        // ignore height (y)
+        target_position = new Vector3(target.transform.position.x, hand.transform.position.y, target.transform.position.z);
+        current_position = hand.transform.position;
+
+        // if distance is greater than some amount, keep moving
+        if (Vector3.Magnitude(target_position - current_position) > 0.1f)
+            hand.transform.position = current_position + 0.1f * Vector3.Normalize(target_position - current_position);
+            //hand.transform.position = Vector3.MoveTowards(current_position, target_position, 2f * Time.deltaTime); // alternative method
     }
 
     public void MoveFinger(int index, string action) // finger index, close/open
