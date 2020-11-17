@@ -17,7 +17,9 @@ public class Controller : MonoBehaviour
     bool stop_rotate = false;
     float degrees = 0;
     float[] finger_states = new float[5] { 0, 0, 0, 0, 0 }; // add an index for opening thumb action
-    public int[] position_state = new int[2] { 0, 0 };   // left /right, forward / backward
+    float[] initial_finger_states = new float[5] { 0, 0, 0, 0, 0 };
+    int[] position_state = new int[2] { 0, 0 };   // left /right, forward / backward
+    int[] initial_position_state = new int[2] { 0, 0 };
     int grip_state = 1;
     int[] finger_indices = new int[5] { 0, 3, 6, 9, 12 };
     GameObject centerOfHand;
@@ -46,24 +48,26 @@ public class Controller : MonoBehaviour
             thumb_axes.Add(thumb2_axis);
             thumb_axes.Add(thumb3_axis);
             centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            original_position = GetCenterOfHand();
-            initial_pos = hand.transform.position;
+            centerOfHand.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+            centerOfHand.transform.position = original_position;
 
             // setting intial distance
             foreach (Transform t in joints)
             {
                 if (t.name.Contains("3"))
                 {
-                    float bone_scale = t.GetChild(0).localScale.y;
+                    float bone_scale = t.GetChild(0).lossyScale.y;
                     GameObject new_fingertip = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    new_fingertip.transform.localScale = 0.5f * Vector3.one;
-                    new_fingertip.transform.position = t.GetChild(0).position + (0.25f * bone_scale) * t.GetChild(0).up;
+                    new_fingertip.transform.localScale = 0.1f * Vector3.one;
+                    new_fingertip.transform.position = t.GetChild(0).position + (0.5f * bone_scale) * t.GetChild(0).up;
                     new_fingertip.transform.parent = t;
                     new_fingertip.name = "fingertip";
                     new_fingertip.GetComponent<Renderer>().material = t.GetComponent<Renderer>().material;
                     fingertips.Add(new_fingertip);
                 }
             }
+
+            CacheState();
 
             /*
             foreach (GameObject t in fingertips)
@@ -171,6 +175,27 @@ public class Controller : MonoBehaviour
 
     }
 
+    void CacheState()
+    {
+        // store original rotations for resetting the hand 
+        for (int i = 0; i < joints.Count; ++i)
+            original_rotation.Add(joints[i].rotation);
+
+        // store initial position
+        initial_pos = hand.transform.position;
+        original_position = GetCenterOfHand();
+
+        // store state arrays
+        for(int i = 0; i < finger_states.Length; ++i)
+            initial_finger_states[i] = finger_states[i];
+        for(int i = 0; i < position_state.Length; ++i)
+            initial_position_state[i] = position_state[i];
+
+        // store ball position & rotation
+        original_obj_position = scene_obj.transform.position;
+        original_obj_rotation = scene_obj.transform.rotation;
+    }
+
     public void MoveOverTarget()
     {
         // translate the hand to be over the target
@@ -264,8 +289,6 @@ public class Controller : MonoBehaviour
                     center_indices.Add(joints.Count);
 
                 joints.Add(child);
-                // store original rotations for resetting the hand 
-                original_rotation.Add(child.rotation);
             }
 
             TraverseHierarchy(child);
@@ -289,9 +312,9 @@ public class Controller : MonoBehaviour
             h_idx = 0;
 
         // open or closed (hand spread)
-        h_idx = 4 * h_idx + grip_state; // number rotations X 2 columns (grip types)
+        //h_idx =  h_idx + grip_state; // number rotations X 2 columns (grip types)
         int state_idx = 1600 * h_idx + pos_idx; // considering all the fingers move independently.
-        Debug.Assert(state_idx < 1600 * (int)(60/rotate_speed) * 4);
+        Debug.Assert(state_idx < 1600 * (int)(60/rotate_speed));
         return state_idx;
     }
 
@@ -352,12 +375,11 @@ public class Controller : MonoBehaviour
         hand.transform.position = initial_pos;
         for (int i = 0; i < joints.Count; ++i)
             joints[i].rotation = original_rotation[i];
-        
-        for (int i = 0; i < finger_states.Length; ++i)
-            finger_states[i] = 0;
 
-        for (int i = 0; i < position_state.Length; ++i)
-            position_state[i] = 0;
+        for(int i = 0; i < finger_states.Length; ++i)
+            finger_states[i] = initial_finger_states[i];
+        for(int i = 0; i < position_state.Length; ++i)
+            position_state[i] = initial_position_state[i];
 
         grip_state = 1;
         scene_obj.transform.position = original_obj_position;

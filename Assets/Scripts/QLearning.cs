@@ -10,7 +10,7 @@ public class QLearning : MonoBehaviour
     Controller handControl;
     public GameObject scene_obj;
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
-    int NUM_ACTIONS = 7; // move hand in some direction, rotate fingers in
+    int NUM_ACTIONS = 5; // move hand in some direction, rotate fingers in
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
@@ -35,24 +35,23 @@ public class QLearning : MonoBehaviour
     float CountDown = 2;
 
     List<int> stored_states = new List<int>(); // store the sequence of states/actions after policy learned
-    float avg = 0;
-    int total_loops = 0;
 
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
-        NUM_STATES = 1600 * (int)(60 / handControl.rotate_speed) * 4;
+        NUM_STATES = 1600 * (int)(60 / handControl.rotate_speed);
         print("Number of states = " + NUM_STATES.ToString());
 
         // init all Q values to 0
         for(int i = 0; i < NUM_STATES; ++i)
         {
-            Q.Add(new List<float> { 0, 0, 0, 0, 0, 0, 0});
+            Q.Add(new List<float> { 0, 0, 0, 0, 0});
             pi.Add(i, 0);
         }
 
         scene_obj.AddComponent<CollisionDetector>();
-
+        Time.timeScale = 0.1f; // double time
+        Time.fixedDeltaTime = Time.fixedDeltaTime * 0.1f;
     }
 
     void Step(int action)
@@ -100,21 +99,21 @@ public class QLearning : MonoBehaviour
 
         else
         {
-            if (iteration_number < max_iterations)
+            if (iteration_number < max_iterations && eps > 0.1f)
             {
                 //handControl.ResetState();
                 //Q_learn();
 
-                //if (episode_done)
-                //{
+                if (episode_done)
+                {
                     //episode_done = false;
                     episode_loop = 0;
                     handControl.ResetState();
                     initial_state = handControl.GetState();
-                    //StartCoroutine("PhysicsQLearn");
-                    PhysicsQLearn();
+                    StartCoroutine("PhysicsQLearn");
                     iteration_number++;
-                //}
+                    eps = Mathf.Max(0, eps * (1 - 1f / (float)(max_iterations)));
+                }
             }
 
             else
@@ -141,7 +140,10 @@ public class QLearning : MonoBehaviour
 
 						print("Learned Policy has been written to Grasping_Policy.csv file.");
 						written = true; // do not need this since we have the done variable
-					}
+
+                        Time.timeScale = 1f; // double time
+                        Time.fixedDeltaTime = Time.fixedDeltaTime * 10f;
+                    }
 
                     done = true;
                 }
@@ -157,6 +159,7 @@ public class QLearning : MonoBehaviour
                 if (handControl.IsTerminal() && !stop_animation)
                 {
                     stop_animation = true;
+                    print("starting coroutine");
                     StartCoroutine("timer");
                     //stop_animation = false; // loop animation
                 }
@@ -173,8 +176,17 @@ public class QLearning : MonoBehaviour
         stop_animation = false;
     }
 
-    //IEnumerator PhysicsQLearn()
-    void PhysicsQLearn()
+    IEnumerator TrainModel()
+    {
+        for (int i = 0; i < max_iterations; ++i)
+        {
+            //StartCoroutine
+        }
+
+        yield return null;
+    }
+
+    IEnumerator PhysicsQLearn()
     {
         while(true)
         {
@@ -214,21 +226,16 @@ public class QLearning : MonoBehaviour
                 print(NUM_STATES.ToString() + "," + s.ToString());
 
             episode_loop++;
-            //float eps_multiplier = 1 - avg; 
-            eps = Mathf.Max(0, eps * 0.999998f);
+            
 
             initial_state = curr_state;
             episode_done = terminal;
             if (episode_loop > 500)
                 episode_done = true;
-            //if (terminal)
-            //yield break;
-            //yield return new WaitForFixedUpdate();
-            if (episode_done)
-                break;
+            if (terminal)
+                yield break;
+            yield return new WaitForFixedUpdate();
         }
-
-        //yield return null;
     }
 
     void Q_learn()
