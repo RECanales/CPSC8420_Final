@@ -101,7 +101,7 @@ public class QLearning : MonoBehaviour
     {
         if (!start_training && handControl.ready) // makes sure hand is intialized before training
         {
-            initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+            initial_dist = 10000;
             //initial_fingertip_dist = handControl.GetAvgDistFromBall();
             start_training = true;
             //StartCoroutine("PhysicsQLearn");
@@ -167,7 +167,7 @@ public class QLearning : MonoBehaviour
                     Step(action);
                 }
 
-                if (scene_obj.GetComponent<CollisionDetector>().reached_goal || !stop_animation)
+                if (scene_obj.GetComponent<CollisionDetector>().reached_goal && !stop_animation)
                 {
                     stop_animation = true;
                     print("starting coroutine");

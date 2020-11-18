@@ -1860,7 +1860,7 @@ MonoBehaviour:
   gamma: 0.95
   eps: 1
   alpha: 0.1
-  max_iterations: 1000
+  max_iterations: 500
   iteration_number: 0
   episode_done: 1
   episode_loop: 0

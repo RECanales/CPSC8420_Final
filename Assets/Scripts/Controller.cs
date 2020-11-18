@@ -50,7 +50,7 @@ public class Controller : MonoBehaviour
             thumb_axes.Add(thumb2_axis);
             thumb_axes.Add(thumb3_axis);
             centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            centerOfHand.transform.localScale = new Vector3(0.5f, 0.25f, 0.5f);
+            centerOfHand.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
             centerOfHand.transform.position = original_position;
             centerOfHand.name = "Goal";
 
