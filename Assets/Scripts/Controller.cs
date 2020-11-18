@@ -21,6 +21,7 @@ public class Controller : MonoBehaviour
     int[] position_state = new int[2] { 0, 0 };   // left /right, forward / backward
     int[] initial_position_state = new int[2] { 0, 0 };
     int grip_state = 1;
+    int initial_grip_state = 1;
     int[] finger_indices = new int[5] { 0, 3, 6, 9, 12 };
     GameObject centerOfHand;
     bool terminal = false;
@@ -31,6 +32,7 @@ public class Controller : MonoBehaviour
     Vector3 original_obj_position;
     Quaternion original_obj_rotation;
     public bool ready = false;
+    public float max_joint_rotation = 70;
 
     // Start is called before the first frame update
     void Start()
@@ -48,8 +50,9 @@ public class Controller : MonoBehaviour
             thumb_axes.Add(thumb2_axis);
             thumb_axes.Add(thumb3_axis);
             centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            centerOfHand.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+            centerOfHand.transform.localScale = new Vector3(0.5f, 0.25f, 0.5f);
             centerOfHand.transform.position = original_position;
+            centerOfHand.name = "Goal";
 
             // setting intial distance
             foreach (Transform t in joints)
@@ -67,6 +70,7 @@ public class Controller : MonoBehaviour
                 }
             }
 
+            //initial_dist = GetAvgDistFromBall();
             CacheState();
 
             /*
@@ -87,36 +91,8 @@ public class Controller : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        
         InputListener();
-        //centerOfHand.transform.position = GetCenterOfHand();
-        /*
-        if (joints.Count > 0)
-        {
-            foreach(Transform j in joints)
-            {
-                if (!stop_rotate)
-                {
-                    //if (j.rotation.eulerAngles.x < 90)
-                    j.Rotate(rotate_speed, 0, 0);
-                    
-                }
-
-                else
-                    j.Rotate(-rotate_speed, 0, 0);
-            }
-
-            if (!stop_rotate)
-                degrees += rotate_speed;
-            else
-                degrees -= rotate_speed;
-            if (degrees > 60)
-                stop_rotate = true;
-            else if (degrees <= 0)
-                stop_rotate = false;
-
-            scene_obj.transform.position = GetCenterOfHand();
-        }*/
     }
 
     void InputListener()
@@ -191,6 +167,8 @@ public class Controller : MonoBehaviour
         for(int i = 0; i < position_state.Length; ++i)
             initial_position_state[i] = position_state[i];
 
+        initial_grip_state = 1;
+
         // store ball position & rotation
         original_obj_position = scene_obj.transform.position;
         original_obj_rotation = scene_obj.transform.rotation;
@@ -214,11 +192,14 @@ public class Controller : MonoBehaviour
     public void MoveFinger(int index, string action) // finger index, close/open
     {
         bool rotate = true;
-
         // (sign < 0 && finger_states[index] <= 0) condition not necessary when close it only action
-        if (action == "close" && finger_states[index] >= 60)
+        if (action == "close" && finger_states[index] >= max_joint_rotation || (action == "open" && finger_states[index] <= 0))
+        {
+            //ResetState();
             rotate = false;
-       
+        }
+
+        float sign = action == "open" ? -1 : 1;
         if (rotate)
         {
             //finger_states[index] = sign > 0 ? finger_states[index] + rotate_speed : finger_states[index] - rotate_speed;
@@ -226,7 +207,7 @@ public class Controller : MonoBehaviour
             // close finger
             finger_states[index] += rotate_speed;
             for (int i = finger_indices[index]; i < finger_indices[index] + 3; ++i)
-                joints[i].Rotate(new Vector3(rotate_speed, 0, 0));
+                joints[i].Rotate(new Vector3(sign*rotate_speed, 0, 0));
         }
     }
 
@@ -272,6 +253,8 @@ public class Controller : MonoBehaviour
             hand.transform.position += new Vector3(0, 0, -move_speed);
             position_state[1] -= 1;
         }
+
+        centerOfHand.transform.position = GetCenterOfHand();
     }
 
     // start from parent object, find all children
@@ -307,55 +290,27 @@ public class Controller : MonoBehaviour
         int pos_idx = 40 * x + z; // serve as X index (size X*Z)
 
         // now rotation (rows)
-        int h_idx = (int)Mathf.Min(59/rotate_speed, finger_states[0] / rotate_speed); // 60 degrees for rotate_speed = 1
+        int h_idx = (int)Mathf.Min((max_joint_rotation - 1)/ rotate_speed, finger_states[0] / rotate_speed); // 60 degrees for rotate_speed = 1
         if (h_idx < 0)
             h_idx = 0;
 
         // open or closed (hand spread)
-        //h_idx =  h_idx + grip_state; // number rotations X 2 columns (grip types)
+        //h_idx = h_idx + grip_state; // number rotations X 4 columns (grip types)
         int state_idx = 1600 * h_idx + pos_idx; // considering all the fingers move independently.
-        Debug.Assert(state_idx < 1600 * (int)(60/rotate_speed));
+        Debug.Assert(state_idx < 1600 * (int)(max_joint_rotation / rotate_speed));
         return state_idx;
     }
 
-    public bool FingersClosed()
-    {
-        for (int i = 0; i < 5; ++i)
-        {
-            // all the way closed, all the way open
-            if (finger_states[i] >= 60/* || finger_states[i] <= 0*/)
-                return true;
-        }
-
-        return false;
-    }
-
-    public bool FingersClosing()
-    {
-        bool allfive = false;
-        for (int i = 0; i < 5; ++i)
-        {
-            // half way or more than half way closed
-            if (finger_states[i] >= 30)
-                allfive = true;
-            else
-                allfive = false;
-        }
-
-        return allfive;
-    }
-
-
-
     public bool IsTerminal()
     {
+        //return false;
         //if (grip_state < 0 || grip_state > 3)
             //return true;
 
         for (int i = 0; i < finger_states.Length; ++i)
         {
             // all the way closed, all the way open
-            if (finger_states[i] >= 60/* || finger_states[i] <= 0*/)
+            if (finger_states[i] >= max_joint_rotation /*|| finger_states[i] < 0*/)
                 return true;
         }
         
@@ -365,7 +320,13 @@ public class Controller : MonoBehaviour
             if (Mathf.Abs(position_state[i]) > 19)
                 return true;
         }
+        
+        // ball has hit a wall
+        if (scene_obj.GetComponent<CollisionDetector>().ungripped /*|| scene_obj.GetComponent<CollisionDetector>().reached_goal*/)
+            return true;
 
+        //if(Vector3.Magnitude(scene_obj.transform.position - GetCenterOfHand()) <= 0.45f) // goal
+            //return true;
         return false;
     }
 
@@ -373,6 +334,7 @@ public class Controller : MonoBehaviour
     {
         scene_obj.GetComponent<Rigidbody>().isKinematic = true;
         hand.transform.position = initial_pos;
+        centerOfHand.transform.position = GetCenterOfHand();
         for (int i = 0; i < joints.Count; ++i)
             joints[i].rotation = original_rotation[i];
 
@@ -384,6 +346,7 @@ public class Controller : MonoBehaviour
         grip_state = 1;
         scene_obj.transform.position = original_obj_position;
         scene_obj.transform.rotation = original_obj_rotation;
+        scene_obj.GetComponent<CollisionDetector>().ResetState();
         scene_obj.GetComponent<Rigidbody>().isKinematic = false;
     }
 
@@ -393,21 +356,24 @@ public class Controller : MonoBehaviour
         for (int i = 0; i < center_indices.Count; ++i)
             center += joints[center_indices[i]].position;
         center /= (float)center_indices.Count;
+        centerOfHand.transform.position = center;
         return center;
     }
 
     public float GetAvgDistFromBall()
     {
         float dist = Vector3.Magnitude(scene_obj.transform.position - GetCenterOfHand());
-        //foreach (GameObject t in fingertips)
-        //{
-            //float radius = scene_obj.transform.localScale.x * scene_obj.GetComponent<SphereCollider>().radius;
-            //Vector3 surface_pos = scene_obj.transform.position + radius * (t.transform.position - scene_obj.transform.position).normalized;
-            //dist += Vector3.Magnitude(t.transform.position - surface_pos);
-        //}
+        foreach (GameObject t in fingertips)
+        {
+            float radius = scene_obj.transform.lossyScale.x * scene_obj.GetComponent<SphereCollider>().radius;
+            Vector3 surface_pos = scene_obj.transform.position + radius * (t.transform.position - scene_obj.transform.position).normalized;
+            dist += Vector3.Magnitude(t.transform.position - surface_pos);
+        }
+
+        return dist;
 
         //return 1/(1+dist);
-
+        /*
         if (dist > initial_dist)
         {
             initial_dist = dist;
@@ -423,5 +389,6 @@ public class Controller : MonoBehaviour
         }
         
         return 0;
+        */
     }
 }

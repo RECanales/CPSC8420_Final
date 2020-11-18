@@ -32,26 +32,27 @@ public class QLearning : MonoBehaviour
     public int episode_loop = 0;
     public int initial_state = 0;
     float initial_dist = 0;
-    float CountDown = 2;
+    float initial_fingertip_dist = 0;
+    float CountDown = 2.5f;
 
     List<int> stored_states = new List<int>(); // store the sequence of states/actions after policy learned
 
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
-        NUM_STATES = 1600 * (int)(60 / handControl.rotate_speed);
+        NUM_STATES = 1600 * (int)(handControl.max_joint_rotation / handControl.rotate_speed); //* 4;
         print("Number of states = " + NUM_STATES.ToString());
 
         // init all Q values to 0
         for(int i = 0; i < NUM_STATES; ++i)
         {
-            Q.Add(new List<float> { 0, 0, 0, 0, 0});
+            Q.Add(new List<float> { 0, 0, 0, 0, 0 });
             pi.Add(i, 0);
         }
 
         scene_obj.AddComponent<CollisionDetector>();
-        Time.timeScale = 0.1f; // double time
-        Time.fixedDeltaTime = Time.fixedDeltaTime * 0.1f;
+        Time.timeScale = 5f; // speed up time
+        Time.fixedDeltaTime = Time.fixedDeltaTime / 5f;
     }
 
     void Step(int action)
@@ -78,6 +79,13 @@ public class QLearning : MonoBehaviour
                 handControl.MoveFinger(3, "close");
                 handControl.MoveFinger(4, "close");
                 break;
+            //case 5:
+                //handControl.MoveFinger(0, "open");
+                //handControl.MoveFinger(1, "open");
+                //handControl.MoveFinger(2, "open");
+                //handControl.MoveFinger(3, "open");
+                //handControl.MoveFinger(4, "open");
+                //break;
             case 5:
                 // adjust grip open
                 handControl.AdjustGrip(1);
@@ -94,30 +102,33 @@ public class QLearning : MonoBehaviour
         if (!start_training && handControl.ready) // makes sure hand is intialized before training
         {
             initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+            //initial_fingertip_dist = handControl.GetAvgDistFromBall();
             start_training = true;
+            //StartCoroutine("PhysicsQLearn");
         }
 
         else
         {
-            if (iteration_number < max_iterations && eps > 0.1f)
+            if (iteration_number < max_iterations)
             {
                 //handControl.ResetState();
                 //Q_learn();
 
                 if (episode_done)
                 {
-                    //episode_done = false;
+                    episode_done = false;
                     episode_loop = 0;
                     handControl.ResetState();
                     initial_state = handControl.GetState();
                     StartCoroutine("PhysicsQLearn");
                     iteration_number++;
-                    eps = Mathf.Max(0, eps * (1 - 1f / (float)(max_iterations)));
+                    eps = Mathf.Max(0.1f, (1 - (float)(iteration_number) / (float)(max_iterations)));
                 }
             }
 
             else
             {
+                
                 if (!done)
                 {
                     print("DONE");
@@ -141,8 +152,8 @@ public class QLearning : MonoBehaviour
 						print("Learned Policy has been written to Grasping_Policy.csv file.");
 						written = true; // do not need this since we have the done variable
 
-                        Time.timeScale = 1f; // double time
-                        Time.fixedDeltaTime = Time.fixedDeltaTime * 10f;
+                        Time.timeScale = 1f;
+                        Time.fixedDeltaTime = Time.fixedDeltaTime * 5f;
                     }
 
                     done = true;
@@ -156,7 +167,7 @@ public class QLearning : MonoBehaviour
                     Step(action);
                 }
 
-                if (handControl.IsTerminal() && !stop_animation)
+                if (scene_obj.GetComponent<CollisionDetector>().reached_goal || !stop_animation)
                 {
                     stop_animation = true;
                     print("starting coroutine");
@@ -176,18 +187,9 @@ public class QLearning : MonoBehaviour
         stop_animation = false;
     }
 
-    IEnumerator TrainModel()
-    {
-        for (int i = 0; i < max_iterations; ++i)
-        {
-            //StartCoroutine
-        }
-
-        yield return null;
-    }
-
     IEnumerator PhysicsQLearn()
     {
+        //for (int i = 0; i < max_iterations; ++i)
         while(true)
         {
             int s = initial_state;
@@ -222,83 +224,26 @@ public class QLearning : MonoBehaviour
 
             Debug.Assert(s < pi.Keys.Count);
             pi[s] = GetMaxIndex(Q[s]);
-            if (s > NUM_STATES)
-                print(NUM_STATES.ToString() + "," + s.ToString());
 
             episode_loop++;
-            
-
+            //eps = Mathf.Max(0, (1 - (float)(episode_loop) / (float)(max_iterations)));
+            //eps = Mathf.Max(0.1f, eps*(1 - (float)(iteration_number) / (float)(max_iterations)));
             initial_state = curr_state;
             episode_done = terminal;
             if (episode_loop > 500)
-                episode_done = true;
-            if (terminal)
-                yield break;
-            yield return new WaitForFixedUpdate();
-        }
-    }
-
-    void Q_learn()
-    {
-        //for (int i = 0; i < max_iterations; ++i)
-        //{
-        
-        int s = handControl.GetState();
-        
-        //eps = 1;
-        int c = 0;
-        //print(c);
-        while (true)
-        {
-            Debug.Assert(s < Q.Count);
-            int action = Random.Range(0, NUM_ACTIONS); // random action
-            float random_val = Random.value;
-            
-            // no index issue
-            if (random_val > eps)
-                action = GetMaxIndex(Q[s]);
-
-            Debug.Assert(action < Q[0].Count);
-            
-            Step(action);
-            int curr_state = handControl.GetState();
-            bool terminal = handControl.IsTerminal();
-            float r = Reward();
-            float target = r;
-            if (!terminal)
             {
-                int next_action = Random.Range(0, NUM_ACTIONS);
-                if (random_val > eps)
-                    next_action = GetMaxIndex(Q[s]);
-
-                int state = handControl.GetState();
-                Debug.Assert(state < Q.Count);
-                // no index issue
-                target = r + gamma * Q[state][next_action];
+                episode_done = true;
             }
-
-            Q[s][action] = (1 - alpha) * Q[s][action] + alpha * target;
-
-            Debug.Assert(s < pi.Keys.Count);
-            pi[s] = GetMaxIndex(Q[s]);
-            if (s > NUM_STATES)
-                print(NUM_STATES.ToString() + "," + s.ToString());
-            //print(Q[s][action]);
-            c++;
-            eps = Mathf.Max(0, eps * 0.999995f);
-            
-            s = curr_state;
-            episode_done = terminal;
-            if (terminal || c > 300)
-                break;
+            if (terminal)
+            {
+                yield break;
+            }
+            yield return new WaitForFixedUpdate();
+            //yield return new WaitForEndOfFrame();
+            //yield return new WaitForSeconds(0.01f);
         }
-
-        //}
-        /*
-        foreach (KeyValuePair<int, int> kvp in pi)
-        {
-            print(kvp.Key.ToString() + "," + kvp.Value.ToString());
-        }*/
+        //done = true;
+        //handControl.ResetState();
     }
 
     int GetMaxIndex(List<float> l)
@@ -319,9 +264,23 @@ public class QLearning : MonoBehaviour
 
     float Reward()
     {
+        // distance of ball from center of hand
         float dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
-            //print(1 - dist / initial_dist);
-        return 1 - dist/initial_dist;
+        //dist = handControl.GetAvgDistFromBall();
+        if (dist < initial_dist)
+        {
+            initial_dist = dist;
+            //if (scene_obj.GetComponent<CollisionDetector>().reached_goal)
+                //return 2;
+            return 1;
+        }
+        if (dist > initial_dist)
+        {
+            initial_dist = dist;
+            return -1;
+        }
+        return 0;
+        //return (1 - dist/initial_dist) + (1 - handControl.GetAvgDistFromBall()/ initial_fingertip_dist);
         //return scene_obj.GetComponent<CollisionDetector>().number_contact / 5f;
     }
 }
