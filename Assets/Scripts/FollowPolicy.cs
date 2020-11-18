@@ -12,6 +12,7 @@ public class FollowPolicy: MonoBehaviour
     bool done = false;
     bool move = false;
     Dictionary<int, int> policy = new Dictionary<int, int>(); // policy
+    float CountDown = 2;
 
     // Start is called before the first frame update
     void Start()
@@ -74,7 +75,7 @@ public class FollowPolicy: MonoBehaviour
             //scene_obj.GetComponent<Rigidbody>().isKinematic = false;
         }
         done = true;
-        stop_animation = true;
+        //stop_animation = true;
         if (!stop_animation)
         {
             int hand_state = handControl.GetState();
@@ -85,7 +86,7 @@ public class FollowPolicy: MonoBehaviour
             print("Following Policy");
         }
 
-        if (handControl.IsTerminal())   //removed '&& !stop_animation' condition
+        if (scene_obj.GetComponent<CollisionDetector>().reached_goal && !stop_animation)   //removed '&& !stop_animation' condition
         {
             stop_animation = true;
             //StartCoroutine("timer");
@@ -94,6 +95,14 @@ public class FollowPolicy: MonoBehaviour
             // Moving the hand to a certain position.
             //print("Hand at terminal state");
         }
+
+        if(stop_animation && !handControl.positioned_over_target)
+        {
+            handControl.MoveOverTarget(0.005f);
+        }
+
+
+        /*
         if (!move)
         {
             Step(2);
@@ -105,7 +114,15 @@ public class FollowPolicy: MonoBehaviour
             move = true;
             print("Moving hand");
         }
-
+        */
     }
 
+    IEnumerator timer()
+    {
+        yield return new WaitForSeconds(CountDown);
+        handControl.ResetState();
+        print(handControl.GetState());
+
+        stop_animation = false;
+    }
 }

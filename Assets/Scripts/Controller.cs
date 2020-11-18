@@ -33,6 +33,7 @@ public class Controller : MonoBehaviour
     Quaternion original_obj_rotation;
     public bool ready = false;
     public float max_joint_rotation = 70;
+    public bool positioned_over_target = false;
 
     // Start is called before the first frame update
     void Start()
@@ -174,7 +175,7 @@ public class Controller : MonoBehaviour
         original_obj_rotation = scene_obj.transform.rotation;
     }
 
-    public void MoveOverTarget()
+    public void MoveOverTarget(float speed)
     {
         // translate the hand to be over the target
         Vector3 target_position, current_position;
@@ -185,8 +186,10 @@ public class Controller : MonoBehaviour
 
         // if distance is greater than some amount, keep moving
         if (Vector3.Magnitude(target_position - current_position) > 0.1f)
-            hand.transform.position = current_position + 0.1f * Vector3.Normalize(target_position - current_position);
-            //hand.transform.position = Vector3.MoveTowards(current_position, target_position, 2f * Time.deltaTime); // alternative method
+            hand.transform.position = current_position + speed * Vector3.Normalize(target_position - current_position);
+        else
+            positioned_over_target = true;
+        centerOfHand.transform.position = GetCenterOfHand();
     }
 
     public void MoveFinger(int index, string action) // finger index, close/open
