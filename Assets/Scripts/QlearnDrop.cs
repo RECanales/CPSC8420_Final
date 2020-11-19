@@ -172,7 +172,7 @@ public class QlearnDrop : MonoBehaviour
 
         if (!start_training && handControl.ready) // makes sure hand is intialized before training
         {
-            //initial_dist = 1000;
+            initial_dist = 1000;
             //initial_fingertip_dist = handControl.GetAvgDistFromBall();
             start_training = true;
             
@@ -344,25 +344,29 @@ public class QlearnDrop : MonoBehaviour
         // distance of ball from center of hand
         //float dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
         //dist = handControl.GetAvgDistFromBall();
-        if (handControl.isObjectOnTarget())
+        float dist = handControl.TargetBallDist();
+        //if (handControl.isObjectOnTarget())
+        //{
+        //return 1;
+        //}
+        //else
+        //{
+        //    return -1;
+        //}
+        //return 0;
+        if (dist < initial_dist)
         {
-            //initial_dist = dist;
+            initial_dist = dist;
             //if (scene_obj.GetComponent<CollisionDetector>().reached_goal)
             //return 2;
             return 1;
         }
-        else
+        if (dist > initial_dist)
         {
+            initial_dist = dist;
             return -1;
         }
-        //if (dist > initial_dist)
-        //{
-          //  initial_dist = dist;
-           // return 1;
-        //}
         return 0;
-        //return (1 - dist/initial_dist) + (1 - handControl.GetAvgDistFromBall()/ initial_fingertip_dist);
-        //return scene_obj.GetComponent<CollisionDetector>().number_contact / 5f;
     }
 
 

@@ -415,6 +415,7 @@ public class Controller : MonoBehaviour
     public float TargetBallDist()
     {
         float dist = Vector3.Magnitude(scene_obj.transform.position - target.transform.position);
+        return dist;
     } 
 
 
