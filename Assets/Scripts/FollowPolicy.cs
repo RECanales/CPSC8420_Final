@@ -11,7 +11,8 @@ public class FollowPolicy: MonoBehaviour
     bool stop_animation = false;
     bool done = false;
     bool move = false;
-    Dictionary<int, int> policy = new Dictionary<int, int>(); // policy
+    Dictionary<int, int> policy = new Dictionary<int, int>(); // Grasping policy
+    Dictionary<int, int> Dpolicy = new Dictionary<int, int>(); // Dropping policy
     float CountDown = 2;
 
     // Start is called before the first frame update
@@ -27,6 +28,16 @@ public class FollowPolicy: MonoBehaviour
                 var values = line.Split(',');
                 policy.Add(int.Parse(values[0]), int.Parse(values[1]));
           }
+        }
+        using (var reader = new StreamReader("Dropping_Policy.csv"))
+        {
+            while (!reader.EndOfStream)
+            {
+                var line = reader.ReadLine();
+                if (line == null) continue;
+                var values = line.Split(',');
+                Dpolicy.Add(int.Parse(values[0]), int.Parse(values[1]));
+            }
         }
     }
 
@@ -60,6 +71,14 @@ public class FollowPolicy: MonoBehaviour
                 break;
             case 6:
                 handControl.AdjustGrip(-1);
+                break;
+            case 7:
+                // open
+                handControl.MoveFinger(0, "open");
+                handControl.MoveFinger(1, "open");
+                handControl.MoveFinger(2, "open");
+                handControl.MoveFinger(3, "open");
+                handControl.MoveFinger(4, "open");
                 break;
         }
     }
@@ -99,6 +118,23 @@ public class FollowPolicy: MonoBehaviour
         if(stop_animation && !handControl.positioned_over_target)
         {
             handControl.MoveOverTarget(0.005f);
+        }
+        if (handControl.positioned_over_target)
+        {
+            int hand_state = handControl.GetState();
+            int action = Dpolicy[hand_state];
+            //print($"State {hand_state} Action {action}");
+            //stored_states.Add(hand_state);
+            if (action == 4)
+            {
+                Step(7);
+            }
+            else 
+            {
+                Step(action);
+            }
+            
+            print("Following Drop Policy");
         }
 
 

@@ -152,7 +152,7 @@ public class Controller : MonoBehaviour
 
     }
 
-    void CacheState()
+    public void CacheState()
     {
         // store original rotations for resetting the hand 
         for (int i = 0; i < joints.Count; ++i)
@@ -173,6 +173,23 @@ public class Controller : MonoBehaviour
         // store ball position & rotation
         original_obj_position = scene_obj.transform.position;
         original_obj_rotation = scene_obj.transform.rotation;
+    }
+
+    public bool isObjectOnTarget()
+    {
+        Vector3 target_position, current_position;
+
+        // ignore height (y)
+        target_position = new Vector3(target.transform.position.x, hand.transform.position.y, target.transform.position.z);
+        current_position = scene_obj.transform.position;
+        if (Vector3.Magnitude(target_position - current_position) > 0.1f)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 
     public void MoveOverTarget(float speed)
@@ -304,6 +321,37 @@ public class Controller : MonoBehaviour
         return state_idx;
     }
 
+    public bool IsTerminalOpen()
+    {
+        //return false;
+        //if (grip_state < 0 || grip_state > 3)
+        //return true;
+
+        for (int i = 0; i < finger_states.Length; ++i)
+        {
+            // all the way open
+            if (finger_states[i] < 0)
+                return true;
+        }
+
+        for (int i = 0; i < position_state.Length; ++i)
+        {
+            // max movement in one direction
+            if (Mathf.Abs(position_state[i]) > 19)
+                return true;
+        }
+
+        // ball has hit a wall
+        if (scene_obj.GetComponent<CollisionDetector>().ungripped /*|| scene_obj.GetComponent<CollisionDetector>().reached_goal*/)
+            return true;
+
+        //if(Vector3.Magnitude(scene_obj.transform.position - GetCenterOfHand()) <= 0.45f) // goal
+        //return true;
+        return false;
+    }
+
+
+
     public bool IsTerminal()
     {
         //return false;
@@ -362,6 +410,13 @@ public class Controller : MonoBehaviour
         centerOfHand.transform.position = center;
         return center;
     }
+
+
+    public float TargetBallDist()
+    {
+        float dist = Vector3.Magnitude(scene_obj.transform.position - target.transform.position);
+    } 
+
 
     public float GetAvgDistFromBall()
     {
