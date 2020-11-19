@@ -207,11 +207,13 @@ public class Controller : MonoBehaviour
         Vector3 target_position, current_position;
 
         // ignore height (y)
-        target_position = new Vector3(target.transform.position.x, hand.transform.position.y, target.transform.position.z);
+        Vector3 hand_center = GetCenterOfHand();
+        Vector3 offset = hand_center - hand.transform.position;
+        target_position = new Vector3(target.transform.position.x, hand.transform.position.y, target.transform.position.z) - offset;
         current_position = hand.transform.position;
 
         // if distance is greater than some amount, keep moving
-        if (Vector3.Magnitude(target_position - current_position) > 0.1f)
+        if (Vector3.Magnitude(target_position - current_position) > speed)
             hand.transform.position = current_position + speed * Vector3.Normalize(target_position - current_position);
         else
             positioned_over_target = true;
