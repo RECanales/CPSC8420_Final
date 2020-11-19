@@ -51,8 +51,7 @@ public class QLearning : MonoBehaviour
         }
 
         scene_obj.AddComponent<CollisionDetector>();
-        Time.timeScale = 5f; // speed up time
-        Time.fixedDeltaTime = Time.fixedDeltaTime / 5f;
+        Time.fixedDeltaTime /= 5;
     }
 
     void Step(int action)
@@ -151,9 +150,6 @@ public class QLearning : MonoBehaviour
 
 						print("Learned Policy has been written to Grasping_Policy.csv file.");
 						written = true; // do not need this since we have the done variable
-
-                        Time.timeScale = 1f;
-                        Time.fixedDeltaTime = Time.fixedDeltaTime * 5f;
                     }
 
                     done = true;

@@ -27,13 +27,13 @@ public class QlearnDrop : MonoBehaviour
     public int initial_state = 0;
     float initial_dist = 0;
     float initial_fingertip_dist = 0;
-    float CountDown = 2.5f;
+    float CountDown = 1f;
     List<int> stored_states = new List<int>(); // store the sequence of states/actions after policy learned
     Dictionary<int, int> policy = new Dictionary<int, int>(); // Grasping policy
     bool check = false;
     bool read = false;
-
-
+    bool state_cached = false;
+    float AnimationTime = 4f; // playback for 4 seconds
 
     // Start is called before the first frame update
     void Start()
@@ -50,12 +50,20 @@ public class QlearnDrop : MonoBehaviour
         }
 
         scene_obj.AddComponent<CollisionDetector>();
-        Time.timeScale = 5f; // speed up time
-        Time.fixedDeltaTime = Time.fixedDeltaTime / 5f;
 
-      
-        
+        // load grasp policy
+        using (var reader = new StreamReader("Grasping_Policy.csv"))
+        {
+            while (!reader.EndOfStream)
+            {
+                var line = reader.ReadLine();
+                if (line == null) continue;
+                var values = line.Split(',');
+                policy.Add(int.Parse(values[0]), int.Parse(values[1]));
+            }
+        }
 
+        Time.fixedDeltaTime /= 5;
     }
 
     void Step(int action)
@@ -75,21 +83,21 @@ public class QlearnDrop : MonoBehaviour
                 handControl.MoveHand("backward");
                 break;
             //case 4:
-                // close
-              //  handControl.MoveFinger(0, "close");
-               // handControl.MoveFinger(1, "close");
-               // handControl.MoveFinger(2, "close");
-               // handControl.MoveFinger(3, "close");
-               // handControl.MoveFinger(4, "close");
-               // break;
+            // close
+            //  handControl.MoveFinger(0, "close");
+            // handControl.MoveFinger(1, "close");
+            // handControl.MoveFinger(2, "close");
+            // handControl.MoveFinger(3, "close");
+            // handControl.MoveFinger(4, "close");
+            // break;
             case 4:
-            // open
-            handControl.MoveFinger(0, "open");
-            handControl.MoveFinger(1, "open");
-            handControl.MoveFinger(2, "open");
-            handControl.MoveFinger(3, "open");
-            handControl.MoveFinger(4, "open");
-            break;
+                // open
+                handControl.MoveFinger(0, "open");
+                handControl.MoveFinger(1, "open");
+                handControl.MoveFinger(2, "open");
+                handControl.MoveFinger(3, "open");
+                handControl.MoveFinger(4, "open");
+                break;
             case 5:
                 // adjust grip open
                 handControl.AdjustGrip(1);
@@ -110,43 +118,16 @@ public class QlearnDrop : MonoBehaviour
 
 
 
-
-
-
-
-
     // Update is called once per frame
     void Update()
     {
-        if (!read)
-        {
-            using (var reader = new StreamReader("Grasping_Policy.csv"))
-            {
-                while (!reader.EndOfStream)
-                {
-                    var line = reader.ReadLine();
-                    if (line == null) continue;
-                    var values = line.Split(',');
-                    policy.Add(int.Parse(values[0]), int.Parse(values[1]));
-                }
-            }
-            read = true;
-        }
-
         if (!check)
         {
             int hand_state = handControl.GetState();
-            int action = policy[hand_state];
+            int action = policy[hand_state] == 4 ? 7 : policy[hand_state];
             //print($"State {hand_state} Action {action}");
             //stored_states.Add(hand_state);
-            if (action == 4)
-            {
-                Step(7);
-            }
-            else
-            {
-                Step(action);
-            }
+            Step(action);
 
             print("Following Policy");
         }
@@ -162,20 +143,20 @@ public class QlearnDrop : MonoBehaviour
         {
             start_training = false;
         }
-        else
+        else if(!state_cached)
         {
             start_training = true;
+            state_cached = true;
             handControl.CacheState();
+            print("state cached"); // found out this was called repeatedly
         }
-
-        
 
         if (!start_training && handControl.ready) // makes sure hand is intialized before training
         {
             initial_dist = 1000;
             //initial_fingertip_dist = handControl.GetAvgDistFromBall();
             start_training = true;
-            
+
             //StartCoroutine("PhysicsQLearn");
         }
 
@@ -224,9 +205,6 @@ public class QlearnDrop : MonoBehaviour
 
                         print("Learned Policy has been written to Dropping_Policy.csv file.");
                         written = true; // do not need this since we have the done variable
-
-                        Time.timeScale = 1f;
-                        Time.fixedDeltaTime = Time.fixedDeltaTime * 5f;
                     }
 
                     done = true;
@@ -238,27 +216,25 @@ public class QlearnDrop : MonoBehaviour
                     int action = pi[hand_state];
                     //stored_states.Add(hand_state);
                     Step(action);
+                    AnimationTime -= Time.deltaTime;
                 }
 
-                if (scene_obj.GetComponent<CollisionDetector>().reached_goal && !stop_animation)
+                if (AnimationTime <= 0)
                 {
                     stop_animation = true;
-                    print("starting coroutine");
+                    AnimationTime = 4f;
                     StartCoroutine("timer");
-                    //stop_animation = false; // loop animation
                 }
             }
         }
-
-
     }
-
 
 
     IEnumerator timer()
     {
         yield return new WaitForSeconds(CountDown);
         handControl.ResetState();
+        
         print(handControl.GetState());
 
         stop_animation = false;

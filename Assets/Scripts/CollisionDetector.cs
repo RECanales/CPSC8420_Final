@@ -10,6 +10,7 @@ public class CollisionDetector : MonoBehaviour
     public int number_contact = 0;
     public bool ungripped = false;
     public bool reached_goal = false;
+    public bool hit_target = false;
     void Start()
     {
         
@@ -19,7 +20,7 @@ public class CollisionDetector : MonoBehaviour
     {
         prev_contact = 0;
         number_contact = 0;
-        ungripped = reached_goal = false;
+        ungripped = reached_goal = hit_target = false;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -42,6 +43,11 @@ public class CollisionDetector : MonoBehaviour
         {
             reached_goal = true;
             print("goal reached");
+        }
+
+        if(collision.collider.gameObject.transform.parent && collision.collider.gameObject.transform.parent.name == "Target")
+        {
+            hit_target = true;
         }
         //print("OnCollisionEnter " + number_contact.ToString());
     }

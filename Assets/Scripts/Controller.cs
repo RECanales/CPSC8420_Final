@@ -155,8 +155,17 @@ public class Controller : MonoBehaviour
     public void CacheState()
     {
         // store original rotations for resetting the hand 
-        for (int i = 0; i < joints.Count; ++i)
-            original_rotation.Add(joints[i].rotation);
+        if (original_rotation.Count == 0)
+        {
+            for (int i = 0; i < joints.Count; ++i)
+                original_rotation.Add(joints[i].rotation);
+        }
+
+        else
+        {
+            for (int i = 0; i < joints.Count; ++i)
+                original_rotation[i] = joints[i].rotation;
+        }
 
         // store initial position
         initial_pos = hand.transform.position;
@@ -166,7 +175,7 @@ public class Controller : MonoBehaviour
         for(int i = 0; i < finger_states.Length; ++i)
             initial_finger_states[i] = finger_states[i];
         for(int i = 0; i < position_state.Length; ++i)
-            initial_position_state[i] = position_state[i];
+            initial_position_state[i] = 0;
 
         initial_grip_state = 1;
 
@@ -219,13 +228,17 @@ public class Controller : MonoBehaviour
             rotate = false;
         }
 
-        float sign = action == "open" ? -1 : 1;
+        
         if (rotate)
         {
+            float sign = action == "open" ? -1 : 1;
             //finger_states[index] = sign > 0 ? finger_states[index] + rotate_speed : finger_states[index] - rotate_speed;
 
-            // close finger
-            finger_states[index] += rotate_speed;
+            if(action == "open")
+                finger_states[index] -= rotate_speed;
+            if (action == "close")
+                finger_states[index] += rotate_speed;
+
             for (int i = finger_indices[index]; i < finger_indices[index] + 3; ++i)
                 joints[i].Rotate(new Vector3(sign*rotate_speed, 0, 0));
         }
@@ -330,8 +343,10 @@ public class Controller : MonoBehaviour
         for (int i = 0; i < finger_states.Length; ++i)
         {
             // all the way open
-            if (finger_states[i] < 0)
+            if (finger_states[i] <= 0)
+            {
                 return true;
+            }
         }
 
         for (int i = 0; i < position_state.Length; ++i)

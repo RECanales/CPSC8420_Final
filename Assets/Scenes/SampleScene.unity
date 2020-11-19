@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4430028, g: 0.492195, b: 0.5719251, a: 1}
+  m_IndirectSpecularColor: {r: 0.44300285, g: 0.49219579, b: 0.5719256, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -813,7 +813,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 214258208}
   m_LocalRotation: {x: 0.7310008, y: -0, z: -0, w: 0.6823767}
-  m_LocalPosition: {x: 0.0065104, y: 0.0768, z: -0.0333}
+  m_LocalPosition: {x: 0.0065104, y: 0.1023, z: -0.0315}
   m_LocalScale: {x: 0.016389264, y: 0.016389284, z: 0.016389284}
   m_Children:
   - {fileID: 1971310272}
@@ -1251,6 +1251,7 @@ MonoBehaviour:
   number_contact: 0
   ungripped: 0
   reached_goal: 0
+  hit_target: 0
 --- !u!1 &474746856
 GameObject:
   m_ObjectHideFlags: 0
@@ -1680,7 +1681,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 714264715}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.1179, y: 0.0019, z: 0.166}
+  m_LocalPosition: {x: -0.143, y: -0.0013, z: 0.04}
   m_LocalScale: {x: 0.017667, y: 0.017667, z: 0.017667}
   m_Children:
   - {fileID: 1172601497}
@@ -1704,7 +1705,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &775038823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1842,7 +1843,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &816357064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2938,7 +2939,7 @@ BoxCollider:
   m_GameObject: {fileID: 1172601496}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
@@ -3435,7 +3436,7 @@ BoxCollider:
   m_GameObject: {fileID: 1271729764}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
@@ -4439,7 +4440,7 @@ MonoBehaviour:
   gamma: 0.95
   eps: 1
   alpha: 0.1
-  max_iterations: 1000
+  max_iterations: 500
   iteration_number: 0
   episode_done: 1
   episode_loop: 0
@@ -5207,8 +5208,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1997137472}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0134, y: 0.02905, z: 0.0478}
-  m_LocalScale: {x: 0.05811856, y: 0.05811856, z: 0.05811856}
+  m_LocalPosition: {x: 0.0134, y: 0.0325, z: 0.0478}
+  m_LocalScale: {x: 0.065, y: 0.065, z: 0.065}
   m_Children: []
   m_Father: {fileID: 487820692}
   m_RootOrder: 1
@@ -5228,6 +5229,7 @@ MonoBehaviour:
   number_contact: 0
   ungripped: 0
   reached_goal: 0
+  hit_target: 0
 --- !u!54 &1997137478
 Rigidbody:
   m_ObjectHideFlags: 0
