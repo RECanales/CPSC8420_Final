@@ -12,13 +12,11 @@ public class QLearning : MonoBehaviour
     Controller handControl;
     public GameObject scene_obj;
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
-    int NUM_ACTIONS = 2; // move hand in some direction, rotate fingers in
+    public int NUM_ACTIONS = 4; // move hand in some direction, rotate fingers in
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
     public int max_iterations = 1000;
-    //public float v[NUM_STATES][NUM_ACTIONS];
-    //public float pi[NUM_STATES];
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
     bool done = false;
@@ -40,14 +38,12 @@ public class QLearning : MonoBehaviour
     float total_reward = 0;
 
     float AnimationTime = 4f; // playback for 4 seconds
-
-    List<int> stored_states = new List<int>(); // store the sequence of states/actions after policy learned
+    float ball_height = 0;
 
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
-        //NUM_STATES = 10 * 10 * 20 * (int)(handControl.max_joint_rotation / handControl.rotate_speed); //* 4;
-        NUM_STATES = 20 * (int)(handControl.max_joint_rotation / handControl.rotate_speed);
+        NUM_STATES = handControl.max_height * handControl.num_grips * (int)(handControl.max_joint_rotation / handControl.rotate_speed);
         print("Number of states = " + NUM_STATES.ToString());
 
         // init all Q values to 0
@@ -61,7 +57,8 @@ public class QLearning : MonoBehaviour
         }
 
         scene_obj.AddComponent<CollisionDetector>();
-        Time.fixedDeltaTime /= 10; // faster physics
+        Time.fixedDeltaTime /= 3; // faster physics
+        ball_height = scene_obj.transform.position.y;
     }
 
     void Step(int action)
@@ -83,6 +80,9 @@ public class QLearning : MonoBehaviour
             case 0:
                 handControl.MoveHand("up");
                 break;
+            //case 1:
+                //handControl.MoveHand("down");
+                //break;
             case 1:
                 // close fingers
                 handControl.MoveFinger(0, "close");
@@ -98,10 +98,10 @@ public class QLearning : MonoBehaviour
                 //handControl.MoveFinger(3, "open");
                 //handControl.MoveFinger(4, "open");
                 //break;
-            //case 5:
+            case 2:
                 // adjust grip open
-                //handControl.AdjustGrip(1);
-                //break;
+                handControl.AdjustGrip(-1);
+                break;
             //case 6:
                 //handControl.AdjustGrip(-1);
                 //break;
@@ -221,6 +221,8 @@ public class QLearning : MonoBehaviour
                 Step(action);
                 int next_state = handControl.GetState();
                 bool terminal = handControl.IsTerminal();
+
+                yield return new WaitForFixedUpdate();
                 float r = Reward();
                 float target = r;
                 if (!terminal)
@@ -245,8 +247,6 @@ public class QLearning : MonoBehaviour
 
                 if (terminal || episode_loop > 1000) // prevent infinite loop
                     break;
-
-                yield return new WaitForFixedUpdate();
             }
 
             iteration_number = i;
@@ -277,11 +277,13 @@ public class QLearning : MonoBehaviour
     {
         // distance of ball from center of hand
         float dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+        //float fingertip_dist = handControl.GetAvgDistFromBall();
         //float dist = handControl.GetAvgDistFromBall();
-        if (scene_obj.transform.position.y <= 0.0325f || dist >= initial_dist)
+        if (scene_obj.transform.position.y <= ball_height)
             return -1;
 
-        return (1 - dist/initial_dist) + 10 * scene_obj.transform.position.y;
+        float _reward = (scene_obj.transform.position.y / ball_height);
+        return _reward ;
         /*
         if (dist < initial_fingertip_dist)
         {
