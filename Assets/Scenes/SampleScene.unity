@@ -3190,15 +3190,14 @@ MonoBehaviour:
   controller: {fileID: 1783497146}
   rewardDisplay: {fileID: 1290136573}
   scene_obj: {fileID: 1997137472}
+  PolicyType: 0
   NUM_ACTIONS: 3
   gamma: 0.99
   eps: 1
   alpha: 0.01
   max_iterations: 5000
   iteration_number: 0
-  episode_done: 1
   episode_loop: 0
-  initial_state: 0
 --- !u!4 &816357065
 Transform:
   m_ObjectHideFlags: 0
@@ -8033,7 +8032,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hand: {fileID: 214258208}
-  scene_obj: {fileID: 1997137472}
   target: {fileID: 714264715}
   debug: 0
   rotate_speed: 5

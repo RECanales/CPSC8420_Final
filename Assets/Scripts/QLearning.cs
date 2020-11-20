@@ -9,38 +9,37 @@ public class QLearning : MonoBehaviour
 {
     public GameObject controller;
     public GameObject rewardDisplay;
+    public GameObject scene_obj; // object being interacted with
+    public enum WhichPolicy { Grasping, Releasing }; // pick which policy is being learned
+    public WhichPolicy PolicyType = WhichPolicy.Grasping;
+    
     Controller handControl;
-    public GameObject scene_obj;
+    Vector3 original_obj_position;
+    Quaternion original_obj_rotation;
+
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
     public int NUM_ACTIONS = 4; // move hand in some direction, rotate fingers in
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
     public int max_iterations = 1000;
+    public int iteration_number = 0;
+    public int episode_loop = 0;
+
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
     Dictionary<int, float> logReward = new Dictionary<int, float>(); // logger
     Dictionary<int, float> logEpisode = new Dictionary<int, float>(); // logger
-    bool done = false;
 
+    bool training_complete = false;
     bool start_training = false;
-
-
-    bool written = false;
-
-    public int iteration_number = 0;
     bool stop_animation = false;
-    public bool episode_done = true;
-    public int episode_loop = 0;
-    public int initial_state = 0;
-    float initial_dist = 0;
-    float initial_fingertip_dist = 0;
-    float CountDown = 1f;
+
     float total_iterations = 0;
     float total_reward = 0;
-
+    float initial_dist;
+    float DelayTime = 1f; // delay between when animation stops and starts again
     float AnimationTime = 4f; // playback for 4 seconds
-    float ball_height = 0;
 
     void Start()
     {
@@ -59,54 +58,35 @@ public class QLearning : MonoBehaviour
         }
 
         scene_obj.AddComponent<CollisionDetector>();
-        Time.fixedDeltaTime /= 3; // faster physics
-        ball_height = scene_obj.transform.position.y;
+        Time.fixedDeltaTime /= 5; // faster physics
+
+        // store object position & rotation
+        original_obj_position = scene_obj.transform.position;
+        original_obj_rotation = scene_obj.transform.rotation;
     }
 
     void Step(int action)
     {
         switch (action)
         {
-            /*case 0:
-                handControl.MoveHand("right");
-                break;
-            case 1:
-                handControl.MoveHand("left");
-                break;
-            case 2:
-                handControl.MoveHand("forward");
-                break;
-            case 3:
-                handControl.MoveHand("backward");
-                break;*/
             case 0:
-                handControl.MoveHand("up");
+                // lift / lower hand
+                string move_direction = PolicyType == WhichPolicy.Grasping ? "up" : "down";
+                handControl.MoveHand(move_direction);
                 break;
-            //case 1:
-                //handControl.MoveHand("down");
-                //break;
             case 1:
-                // close fingers
-                handControl.MoveFinger(0, "close");
-                handControl.MoveFinger(1, "close");
-                handControl.MoveFinger(2, "close");
-                handControl.MoveFinger(3, "close");
-                handControl.MoveFinger(4, "close");
+                // rotate fingers
+                string rotate_direction = PolicyType == WhichPolicy.Grasping ? "close" : "open";
+                handControl.MoveFinger(0, rotate_direction);
+                handControl.MoveFinger(1, rotate_direction);
+                handControl.MoveFinger(2, rotate_direction);
+                handControl.MoveFinger(3, rotate_direction);
+                handControl.MoveFinger(4, rotate_direction);
                 break;
-            //case 5:
-                //handControl.MoveFinger(0, "open");
-                //handControl.MoveFinger(1, "open");
-                //handControl.MoveFinger(2, "open");
-                //handControl.MoveFinger(3, "open");
-                //handControl.MoveFinger(4, "open");
-                //break;
             case 2:
-                // adjust grip open
+                // adjust grip
                 handControl.AdjustGrip(-1);
                 break;
-            //case 6:
-                //handControl.AdjustGrip(-1);
-                //break;
         }
     }
 
@@ -115,8 +95,9 @@ public class QLearning : MonoBehaviour
     {
         if (!start_training && handControl.ready) // makes sure hand is intialized before training
         {
+            handControl.CacheState();
+            handControl.ResetState();
             initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
-            initial_fingertip_dist = handControl.GetAvgDistFromBall();
             start_training = true;
             StartCoroutine("PhysicsQLearn");
         }
@@ -125,78 +106,33 @@ public class QLearning : MonoBehaviour
         {
             if (iteration_number < max_iterations)
             {
-                //handControl.ResetState();
-                //Q_learn();
-
-                //if (episode_done)
-                //{
-                    //episode_done = false;
-                    //episode_loop = 0;
-
-                    //StartCoroutine("PhysicsQLearn");
-                    //iteration_number++;
-                    
-                //}
-
+                // compute average reward & display on screen
                 float avg_reward = total_reward / (float)total_iterations;
                 rewardDisplay.GetComponent<Text>().text = "Average reward: " + avg_reward.ToString("F3");
             }
 
             else
             {
-                
-                if (!done)
+                if (!training_complete)
                 {
-                    print("DONE");
-                    handControl.ResetState();
-                    print(handControl.GetState());
-                    scene_obj.GetComponent<Rigidbody>().isKinematic = false;
+                    print("Training complete.");
+                    ResetState();
                     StopCoroutine("PhysicsQLearn");
-					
-					// RC moved this here
-					if (!written) 
-					{
-						//Writing the policy to a .csv file.
-						using (var writer = new StreamWriter("Grasping_Policy.csv"))
-						{
-							foreach (var pair in pi)
-							{
-								writer.WriteLine("{0},{1},", pair.Key, pair.Value);
-							}
-						}
 
-						print("Learned Policy has been written to Grasping_Policy.csv file.");
+                    // RC: I made a function to clean this up
+                    WriteCSV("Grasping_Policy.csv", pi); // write policy
+                    WriteCSV("EpisodeLog.csv", logEpisode);
+                    WriteCSV("RewardLog.csv", logReward);
+                    print("Learned Policy has been written to Grasping_Policy.csv file.");
+                    print("Episode and reward values have been logged.");
 
-
-                        using (var writer = new StreamWriter("EpisodeLog.csv"))
-                        {
-                            foreach (var pair in logEpisode)
-                            {
-                                writer.WriteLine("{0},{1},", pair.Key, pair.Value);
-                            }
-                        }
-
-                        using (var writer = new StreamWriter("RewardLog.csv"))
-                        {
-                            foreach (var pair in logReward)
-                            {
-                                writer.WriteLine("{0},{1},", pair.Key, pair.Value);
-                            }
-                        }
-                        print("Episode and reward values have been logged.");
-
-
-                        written = true; // do not need this since we have the done variable
-                    }
-
-                    done = true;
+                    training_complete = true;
                 }
 
                 if (!stop_animation)
                 {
                     int hand_state = handControl.GetState();
                     int action = pi[hand_state];
-                    //print(hand_state);
                     Step(action);
                     AnimationTime -= Time.deltaTime;
                 }
@@ -205,27 +141,26 @@ public class QLearning : MonoBehaviour
                 {
                     stop_animation = true;
                     AnimationTime = 4;
-                    print("Starting countdown...");
-                    StartCoroutine("timer");
+                    print("Playback complete. Looping...");
+                    StartCoroutine("Delay");
                 }
             }
         }
     }
 
-    IEnumerator timer()
+    IEnumerator Delay()
     {
-        yield return new WaitForSeconds(CountDown);
-        handControl.ResetState();
-        print("State reset.");
+        yield return new WaitForSeconds(DelayTime);
+        ResetState();
+        print("State reset to: " + handControl.GetState().ToString());
         stop_animation = false;
     }
-    
 
     IEnumerator PhysicsQLearn()
     {
         for (int i = 0; i < max_iterations; ++i)
         {
-            handControl.ResetState();
+            ResetState();
             int s = handControl.GetState();
             episode_loop = 0;
             while (true)
@@ -235,7 +170,6 @@ public class QLearning : MonoBehaviour
                 int action = Random.Range(0, NUM_ACTIONS); // random action
                 float random_val = Random.value;
 
-                // no index issue
                 if (random_val > eps)
                     action = GetMaxIndex(Q[s]);
 
@@ -243,9 +177,13 @@ public class QLearning : MonoBehaviour
 
                 Step(action);
                 int next_state = handControl.GetState();
-                bool terminal = handControl.IsTerminal();
 
+                string _policy = PolicyType == WhichPolicy.Grasping ? "grasp" : "release";
+                bool terminal = handControl.IsTerminal(_policy);
+
+                // make sure physics updates before getting reward
                 yield return new WaitForFixedUpdate();
+
                 float r = Reward();
                 float target = r;
                 if (!terminal)
@@ -304,21 +242,34 @@ public class QLearning : MonoBehaviour
         float dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
         //float fingertip_dist = handControl.GetAvgDistFromBall();
         //float dist = handControl.GetAvgDistFromBall();
-        if (scene_obj.transform.position.y <= ball_height)
+        if (scene_obj.transform.position.y <= original_obj_position.y)
             return -1;
 
-        float _reward = (scene_obj.transform.position.y / ball_height);
-        return _reward ;
-        /*
-        if (dist < initial_fingertip_dist)
+        float _reward = (scene_obj.transform.position.y / original_obj_position.y);
+        return _reward;
+    }
+
+    void ResetState()
+    {
+        scene_obj.GetComponent<Rigidbody>().isKinematic = true;
+
+        // reset hand state
+        handControl.ResetState();
+
+        scene_obj.transform.position = original_obj_position;
+        scene_obj.transform.rotation = original_obj_rotation;
+        scene_obj.GetComponent<CollisionDetector>().ResetState();
+        scene_obj.GetComponent<Rigidbody>().isKinematic = false;
+    }
+
+    void WriteCSV<T>(string fileName, Dictionary<int, T> data)
+    {
+        using (var writer = new StreamWriter(fileName))
         {
-            //initial_dist = dist;
-            return 10 * scene_obj.transform.position.y;
+            foreach (var pair in data)
+            {
+                writer.WriteLine("{0},{1},", pair.Key, pair.Value);
+            }
         }
-
-        else
-        {
-            return -1;
-        }*/
     }
 }

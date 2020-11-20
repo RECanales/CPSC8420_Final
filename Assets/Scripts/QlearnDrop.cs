@@ -258,7 +258,7 @@ public class QlearnDrop : MonoBehaviour
 
             Step(action);
             int curr_state = handControl.GetState();
-            bool terminal = handControl.IsTerminalOpen();
+            bool terminal = handControl.IsTerminal("grasp");
             float r = Reward();
             float target = r;
             if (!terminal)
@@ -320,7 +320,7 @@ public class QlearnDrop : MonoBehaviour
         // distance of ball from center of hand
         //float dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
         //dist = handControl.GetAvgDistFromBall();
-        float dist = handControl.TargetBallDist();
+        float dist = handControl.TargetObjDist(scene_obj);
         //if (handControl.isObjectOnTarget())
         //{
         //return 1;
