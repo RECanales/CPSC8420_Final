@@ -18,8 +18,8 @@ public class Controller : MonoBehaviour
     float degrees = 0;
     float[] finger_states = new float[5] { 0, 0, 0, 0, 0 }; // add an index for opening thumb action
     float[] initial_finger_states = new float[5] { 0, 0, 0, 0, 0 };
-    int[] position_state = new int[2] { 0, 0 };   // left /right, forward / backward
-    int[] initial_position_state = new int[2] { 0, 0 };
+    int[] position_state = new int[3] { 0, 0, -19 };   // left /right, forward / backward, up
+    int[] initial_position_state = new int[3] { 0, 0, 0 };
     int grip_state = 1;
     int initial_grip_state = 1;
     int[] finger_indices = new int[5] { 0, 3, 6, 9, 12 };
@@ -121,8 +121,8 @@ public class Controller : MonoBehaviour
             MoveFinger(finger_indices[4], "close");
         //else MoveFinger(4, "open");
 
-        if (Input.GetKey(KeyCode.UpArrow))
-            MoveHand("left");
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+            MoveHand("up");
 
         if (Input.GetKey(KeyCode.DownArrow))
             MoveHand("right");
@@ -264,10 +264,23 @@ public class Controller : MonoBehaviour
 
     public void MoveHand(string direction)
     {
+        if (Mathf.Abs(position_state[0]) > 4)
+            return;
+        if (Mathf.Abs(position_state[1]) > 4)
+            return;
+        if (Mathf.Abs(position_state[2]) > 9)
+            return;
+
         if (direction == "up")
+        {
             hand.transform.position += new Vector3(0, move_speed, 0);
+            position_state[2] += 1;
+        }
         else if (direction == "down")
+        {
             hand.transform.position += new Vector3(0, -move_speed, 0);
+            position_state[1] -= 1;
+        }
         else if (direction == "right")
         {
             hand.transform.position += new Vector3(move_speed, 0, 0);
@@ -315,24 +328,38 @@ public class Controller : MonoBehaviour
 
     public int GetState()
     {
+     
+        int yMax = 20;
+        int xMax = 10;
         // first, position (columns of Q table)
-        int x = (int)Mathf.Min(position_state[0] + 19, 39);
-        int z = (int)Mathf.Min(position_state[1] + 19, 39);
+        int x = (int)Mathf.Min(position_state[0] + (xMax / 2) - 1, xMax-1);
+        int z = (int)Mathf.Min(position_state[1] + (xMax / 2) - 1, xMax-1);
+        int y = (int)Mathf.Min(position_state[2] + (yMax / 2) - 1, yMax-1);
+        
         if (x < 0)
             x = 0;
         if (z < 0)
             z = 0;
-        int pos_idx = 40 * x + z; // serve as X index (size X*Z)
+        if (y < 0)
+            y = 0;
+
+        //int pos_idx = 40 * x + z; // serve as X index (size X*Z)
+
+        int pos_idx = (z * xMax * yMax) + (y * xMax) + x; // columns
 
         // now rotation (rows)
-        int h_idx = (int)Mathf.Min((max_joint_rotation - 1)/ rotate_speed, finger_states[0] / rotate_speed); // 60 degrees for rotate_speed = 1
+        int h_idx = (int)Mathf.Min(max_joint_rotation / rotate_speed - 1, finger_states[0] / rotate_speed); // 60 degrees for rotate_speed = 1
         if (h_idx < 0)
             h_idx = 0;
-
         // open or closed (hand spread)
         //h_idx = h_idx + grip_state; // number rotations X 4 columns (grip types)
-        int state_idx = 1600 * h_idx + pos_idx; // considering all the fingers move independently.
-        Debug.Assert(state_idx < 1600 * (int)(max_joint_rotation / rotate_speed));
+        //int state_idx = xMax * xMax * yMax * h_idx + pos_idx; // considering all the fingers move independently.
+        int state_idx = h_idx * (int)(max_joint_rotation / rotate_speed) + y;
+        //int state_idx = h_idx * (int)(max_joint_rotation / rotate_speed) + pos_idx;
+
+        //state_idx = x + y * xMax + z * xMax * yMax + h_idx * xMax * xMax * yMax;
+        //print(state_idx);
+        Debug.Assert(state_idx < yMax * (int)(max_joint_rotation / rotate_speed));
         return state_idx;
     }
 
@@ -371,24 +398,29 @@ public class Controller : MonoBehaviour
 
     public bool IsTerminal()
     {
-        //return false;
         //if (grip_state < 0 || grip_state > 3)
-            //return true;
+        //return true;
+
+        // hand has moved up to max height
+        if (Mathf.Abs(position_state[2]) >= 9)
+            return true;
 
         for (int i = 0; i < finger_states.Length; ++i)
         {
             // all the way closed, all the way open
-            if (finger_states[i] >= max_joint_rotation /*|| finger_states[i] < 0*/)
+            if (finger_states[i] >= max_joint_rotation)
                 return true;
         }
         
-        for(int i = 0; i < position_state.Length; ++i)
+        
+        /*for(int i = 0; i < position_state.Length; ++i)
         {
             // max movement in one direction
-            if (Mathf.Abs(position_state[i]) > 19)
+            if (Mathf.Abs(position_state[i]) > 4)
                 return true;
-        }
+        }*/
         
+
         // ball has hit a wall
         if (scene_obj.GetComponent<CollisionDetector>().ungripped /*|| scene_obj.GetComponent<CollisionDetector>().reached_goal*/)
             return true;
