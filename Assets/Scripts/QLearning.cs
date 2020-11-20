@@ -21,6 +21,8 @@ public class QLearning : MonoBehaviour
     //public float pi[NUM_STATES];
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
+    Dictionary<int, float> logReward = new Dictionary<int, float>(); // logger
+    Dictionary<int, float> logEpisode = new Dictionary<int, float>(); // logger
     bool done = false;
 
     bool start_training = false;
@@ -164,7 +166,27 @@ public class QLearning : MonoBehaviour
 						}
 
 						print("Learned Policy has been written to Grasping_Policy.csv file.");
-						written = true; // do not need this since we have the done variable
+
+
+                        using (var writer = new StreamWriter("EpisodeLog.csv"))
+                        {
+                            foreach (var pair in logEpisode)
+                            {
+                                writer.WriteLine("{0},{1},", pair.Key, pair.Value);
+                            }
+                        }
+
+                        using (var writer = new StreamWriter("RewardLog.csv"))
+                        {
+                            foreach (var pair in logReward)
+                            {
+                                writer.WriteLine("{0},{1},", pair.Key, pair.Value);
+                            }
+                        }
+                        print("Episode and reward values have been logged.");
+
+
+                        written = true; // do not need this since we have the done variable
                     }
 
                     done = true;
@@ -197,6 +219,7 @@ public class QLearning : MonoBehaviour
         print("State reset.");
         stop_animation = false;
     }
+    
 
     IEnumerator PhysicsQLearn()
     {
@@ -250,6 +273,8 @@ public class QLearning : MonoBehaviour
             }
 
             iteration_number = i;
+            logEpisode.Add(iteration_number, episode_loop);
+            logReward.Add(iteration_number, total_reward);
             eps = Mathf.Max(0.1f, (1 - (float)i / (float)(max_iterations)));
         }
 
