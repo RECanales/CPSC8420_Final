@@ -21,7 +21,7 @@ public class Controller : MonoBehaviour
     int grip_state = 0; // was 1 when close was enabled
     int initial_grip_state = 0;
     int[] finger_indices = new int[5] { 0, 3, 6, 9, 12 };
-    GameObject centerOfHand;
+    //GameObject centerOfHand;
     bool terminal = false;
 
     Vector3 original_position, initial_pos; // original = center, initial = root
@@ -32,6 +32,7 @@ public class Controller : MonoBehaviour
     public bool ready = false;
     public float max_joint_rotation = 70;
     public bool positioned_over_target = false;
+    Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
 
     // Start is called before the first frame update
     void Start()
@@ -39,11 +40,11 @@ public class Controller : MonoBehaviour
         if (hand)
         {
             TraverseHierarchy(hand.transform);
-            centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            centerOfHand.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
-            centerOfHand.transform.position = original_position;
-            centerOfHand.name = "Goal";
-            centerOfHand.GetComponent<BoxCollider>().enabled = false;
+            //centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            //centerOfHand.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
+            //centerOfHand.transform.position = original_position;
+            //centerOfHand.name = "Goal";
+            //centerOfHand.GetComponent<BoxCollider>().enabled = false;
 
             // setting intial distance
             foreach (Transform t in joints)
@@ -62,6 +63,7 @@ public class Controller : MonoBehaviour
             }
         }
 
+        CacheState();
         ready = true;
     }
 
@@ -162,11 +164,11 @@ public class Controller : MonoBehaviour
         current_position = hand.transform.position;
 
         // if distance is greater than some amount, keep moving
-        if (Vector3.Magnitude(target_position - current_position) > speed)
+        if (Vector3.Magnitude(target_position - current_position) > 0.1f)
             hand.transform.position = current_position + speed * Vector3.Normalize(target_position - current_position);
         else
             positioned_over_target = true;
-        centerOfHand.transform.position = GetCenterOfHand();
+        //centerOfHand.transform.position = GetCenterOfHand();
     }
 
     public void MoveFinger(int index, string action) // finger index, close/open
@@ -247,7 +249,7 @@ public class Controller : MonoBehaviour
             position_state[1] -= 1;
         }
 
-        centerOfHand.transform.position = GetCenterOfHand();
+        //centerOfHand.transform.position = GetCenterOfHand();
     }
 
     // start from parent object, find all children
@@ -306,21 +308,25 @@ public class Controller : MonoBehaviour
 
     public bool IsTerminal(string policy)
     {
+        /*
         // hand has moved up to max height
         if ((policy == "grasp" && position_state[2] >= max_height - 1) || (policy == "release" && position_state[2] <= 0))
-            return true;
+            return true;*/
 
         // all the way closed or all the way open
         if ((policy == "grasp" && finger_states[0] >= max_joint_rotation - 1) || (policy == "release" && finger_states[0] <= 0))
             return true;
 
-        return false;
+        if (policy == "grasp")
+            return GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().ungripped;
+        else
+            return GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().hit_floor || GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().hit_target;
     }
 
     public void ResetState()
     {
         hand.transform.position = initial_pos;
-        centerOfHand.transform.position = GetCenterOfHand();
+        //centerOfHand.transform.position = GetCenterOfHand();
         for (int i = 0; i < joints.Count; ++i)
             joints[i].rotation = original_rotation[i];
 
@@ -338,7 +344,7 @@ public class Controller : MonoBehaviour
         for (int i = 0; i < center_indices.Count; ++i)
             center += joints[center_indices[i]].position;
         center /= (float)center_indices.Count;
-        centerOfHand.transform.position = center;
+        //centerOfHand.transform.position = center;
         return center;
     }
 
@@ -346,7 +352,8 @@ public class Controller : MonoBehaviour
     {
         float dist = Vector3.Magnitude(scene_obj.transform.position - target.transform.position);
         return dist;
-    } 
+    }
+
 
     /*
     public float GetAvgDistFromBall()

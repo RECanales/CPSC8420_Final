@@ -850,7 +850,7 @@ GameObject:
   - component: {fileID: 126492125}
   - component: {fileID: 126492124}
   m_Layer: 0
-  m_Name: Plane
+  m_Name: Floor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1860,6 +1860,7 @@ MonoBehaviour:
   ungripped: 0
   reached_goal: 0
   hit_target: 0
+  hit_floor: 0
 --- !u!1 &331402037
 GameObject:
   m_ObjectHideFlags: 0
@@ -2155,7 +2156,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 474746856}
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -1.79, y: 1.18, z: 0.68}
+  m_LocalPosition: {x: -2.557, y: 1.18, z: 0.68}
   m_LocalScale: {x: 5.2178, y: 2.42, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -3191,13 +3192,14 @@ MonoBehaviour:
   rewardDisplay: {fileID: 1290136573}
   scene_obj: {fileID: 1997137472}
   PolicyType: 0
-  NUM_ACTIONS: 3
-  gamma: 0.99
+  NUM_ACTIONS: 6
+  gamma: 0.95
   eps: 1
-  alpha: 0.01
-  max_iterations: 5000
+  alpha: 0.1
+  max_iterations: 10000
   iteration_number: 0
   episode_loop: 0
+  AnimationTime: 3
 --- !u!4 &816357065
 Transform:
   m_ObjectHideFlags: 0
@@ -3747,7 +3749,7 @@ Camera:
     height: 1
   near clip plane: 0.01
   far clip plane: 1000
-  field of view: 90
+  field of view: 60
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -3772,13 +3774,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.18301272, y: 0.6830127, z: -0.18301274, w: 0.68301266}
-  m_LocalPosition: {x: -2.6, y: 1.25, z: 0.46}
+  m_LocalRotation: {x: 0.5, y: 0.50000006, z: -0.50000006, w: 0.5}
+  m_LocalPosition: {x: -0.581, y: 3.747, z: 0.521}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 30, y: 90.00001, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 90.00001, z: 0}
 --- !u!1 &972494745
 GameObject:
   m_ObjectHideFlags: 0
@@ -5547,6 +5549,7 @@ MonoBehaviour:
   ungripped: 0
   reached_goal: 0
   hit_target: 0
+  hit_floor: 0
 --- !u!54 &1204971137
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -8033,12 +8036,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hand: {fileID: 214258208}
   target: {fileID: 714264715}
-  debug: 0
+  debug: 1
   rotate_speed: 5
   move_speed: 0.05
   max_height: 15
   num_grips: 5
-  max_stretch: 15
+  max_stretch: 20
   ready: 0
   max_joint_rotation: 60
   positioned_over_target: 0
@@ -8804,7 +8807,7 @@ GameObject:
   - component: {fileID: 1997137478}
   m_Layer: 0
   m_Name: Sphere
-  m_TagString: Untagged
+  m_TagString: Ball
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8898,6 +8901,7 @@ MonoBehaviour:
   ungripped: 0
   reached_goal: 0
   hit_target: 0
+  hit_floor: 0
 --- !u!54 &1997137478
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -11,6 +11,7 @@ public class CollisionDetector : MonoBehaviour
     public bool ungripped = false;
     public bool reached_goal = false;
     public bool hit_target = false;
+    public bool hit_floor = false;
     void Start()
     {
         
@@ -20,7 +21,7 @@ public class CollisionDetector : MonoBehaviour
     {
         prev_contact = 0;
         number_contact = 0;
-        ungripped = reached_goal = hit_target = false;
+        ungripped = reached_goal = hit_target = hit_floor = false;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -48,7 +49,15 @@ public class CollisionDetector : MonoBehaviour
         if(collision.collider.gameObject.transform.parent && collision.collider.gameObject.transform.parent.name == "Target")
         {
             hit_target = true;
+            print("target_hit");
         }
+
+        if (collision.collider.name == "Floor")
+        {
+            hit_floor = true;
+            print("floor hit");
+        }
+
         //print("OnCollisionEnter " + number_contact.ToString());
     }
 
