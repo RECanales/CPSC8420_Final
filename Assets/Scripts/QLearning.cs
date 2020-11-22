@@ -12,6 +12,7 @@ public class QLearning : MonoBehaviour
     public GameObject scene_obj; // object being interacted with
     public enum WhichPolicy { Grasping, Releasing }; // pick which policy is being learned
     public WhichPolicy PolicyType = WhichPolicy.Grasping;
+    WhichPolicy CurrentPolicy = WhichPolicy.Grasping;
     
     Controller handControl;
     Vector3 original_obj_position;
@@ -46,7 +47,9 @@ public class QLearning : MonoBehaviour
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
-        NUM_STATES = handControl.max_height * handControl.num_grips * (int)(handControl.max_joint_rotation / handControl.rotate_speed);
+        //NUM_STATES = handControl.max_height * handControl.num_grips * (int)(handControl.max_joint_rotation / handControl.rotate_speed);
+        NUM_STATES = handControl.max_height * handControl.num_grips * handControl.max_horizontal_travel *
+            handControl.max_horizontal_travel * (int)(handControl.max_joint_rotation / handControl.rotate_speed);
         print("Number of states = " + NUM_STATES.ToString());
 
         // init all Q values to 0
@@ -68,37 +71,50 @@ public class QLearning : MonoBehaviour
         switch (action)
         {
             case 0:
-                // lift / lower hand
-                //string move_direction = PolicyType == WhichPolicy.Grasping ? "up" : "down";
-                //move_direction = "up";
+                // lift hand
                 handControl.MoveHand("up");
                 break;
             case 1:
+                // lower hand
                 handControl.MoveHand("down");
                 break;
             case 2:
-                // rotate fingers
-                //string rotate_direction = PolicyType == WhichPolicy.Grasping ? "close" : "open";
+                // move hand forward
+                handControl.MoveHand("forward");
+                break;
+            case 3:
+                // hand backwards
+                handControl.MoveHand("backward");
+                break;
+            case 4:
+                // hand to the right
+                handControl.MoveHand("right");
+                break;
+            case 5:
+                // hand to the left
+                handControl.MoveHand("left");
+                break;
+            case 6:
+                // rotate fingers (close)
                 handControl.MoveFinger(0, "close");
                 handControl.MoveFinger(1, "close");
                 handControl.MoveFinger(2, "close");
                 handControl.MoveFinger(3, "close");
                 handControl.MoveFinger(4, "close");
                 break;
-            case 3:
-                // rotate fingers
-                
+            case 7:
+                // rotate fingers (open)
                 handControl.MoveFinger(0, "open");
                 handControl.MoveFinger(1, "open");
                 handControl.MoveFinger(2, "open");
                 handControl.MoveFinger(3, "open");
                 handControl.MoveFinger(4, "open");
                 break;
-            case 4:
+            case 8:
                 // adjust grip (open)
                 handControl.AdjustGrip(-1);
                 break;
-            case 5:
+            case 9:
                 // adjust grip (close)
                 handControl.AdjustGrip(1);
                 break;
@@ -108,23 +124,37 @@ public class QLearning : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (PolicyType == WhichPolicy.Grasping)
+        if (handControl.ready && !training_complete) // wait until hand is done following grasping policy and moved over target
         {
-            if (!start_training && handControl.ready) // makes sure hand is intialized before training
+            if (PolicyType == WhichPolicy.Releasing && !follow_policy)
             {
                 handControl.CacheState();
                 handControl.ResetState();
-                initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+                follow_policy = true;
+                Dictionary<int, int> GraspingPolicy = LoadPolicy("Grasping_Policy.csv");
+                StartCoroutine("FollowPolicy", GraspingPolicy);
+                return;
+            }
+
+            if (!start_training && (PolicyType == WhichPolicy.Grasping || train_release)) // makes sure hand is intialized before training
+            {
+                handControl.CacheState();
+                handControl.ResetState();
+                if (PolicyType == WhichPolicy.Grasping)
+                    initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+                else
+                    initial_dist = handControl.TargetObjDist(scene_obj);
 
                 // store object position & rotation
                 original_obj_position = scene_obj.transform.position;
                 original_obj_rotation = scene_obj.transform.rotation;
 
                 start_training = true;
+                print("State cached. Training...");
                 StartCoroutine("PhysicsQLearn");
             }
 
-            else
+            else if(start_training)
             {
                 if (iteration_number < max_iterations)
                 {
@@ -146,74 +176,21 @@ public class QLearning : MonoBehaviour
                         WriteCSV(policyName, pi); // write policy
                         WriteCSV("EpisodeLog.csv", logEpisode);
                         WriteCSV("RewardLog.csv", logReward);
-                        print("Learned Policy has been written to Grasping_Policy.csv file.");
+                        print("Learned Policy has been written to " + policyName);
                         print("Episode and reward values have been logged.");
 
                         training_complete = true;
+                        //StartCoroutine
                     }
-
-                    /*
-                    if (!stop_animation)
-                    {
-                        int hand_state = handControl.GetState();
-                        int action = pi[hand_state];
-                        Step(action);
-                        AnimationTime -= Time.deltaTime;
-                    }
-
-                    if (AnimationTime <= 0)
-                    {
-                        stop_animation = true;
-                        AnimationTime = 4;
-                        print("Playback complete. Looping...");
-                        StartCoroutine("Delay");
-                    }
-                    */
                 }
             }
         }
 
-        else if(!follow_policy && handControl.ready)
+        if(training_complete && !stop_animation)
         {
-            handControl.CacheState();
-            handControl.ResetState();
-            Dictionary<int, int> GraspingPolicy = LoadPolicy("Grasping_Policy.csv");
-            StartCoroutine("FollowPolicy", GraspingPolicy);
-            follow_policy = true;
+            ResetState();
+            StartCoroutine("FollowPolicy", pi); // follow learned policy, loop
         }
-
-        if(train_release && !start_training)
-        {
-            StopCoroutine("FollowPolicy");
-            handControl.CacheState();
-            handControl.ResetState();
-            initial_dist = handControl.TargetObjDist(scene_obj);
-
-            // store object position & rotation
-            original_obj_position = scene_obj.transform.position;
-            original_obj_rotation = scene_obj.transform.rotation;
-
-            start_training = true;
-            StartCoroutine("PhysicsQLearn");
-        }
-
-        else if(start_training)
-        {
-            if (iteration_number < max_iterations)
-            {
-                // compute average reward & display on screen
-                float avg_reward = total_reward / (float)total_iterations;
-                rewardDisplay.GetComponent<Text>().text = "Average reward: " + avg_reward.ToString("F3");
-            }
-        }
-    }
-
-    IEnumerator Delay()
-    {
-        yield return new WaitForSeconds(DelayTime);
-        ResetState();
-        print("State reset to: " + handControl.GetState().ToString());
-        stop_animation = false;
     }
 
     IEnumerator PhysicsQLearn()
@@ -301,8 +278,8 @@ public class QLearning : MonoBehaviour
         float _reward = 0;
         if (PolicyType == WhichPolicy.Grasping)
         {
-            if (scene_obj.transform.position.y <= original_obj_position.y)
-                _reward = - 1;
+            if (scene_obj.transform.position.y <= original_obj_position.y /*|| Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand()) >= initial_dist*/)
+                _reward = -1;
             else
                 _reward = (scene_obj.transform.position.y / original_obj_position.y);
         }
@@ -351,6 +328,9 @@ public class QLearning : MonoBehaviour
 
     IEnumerator FollowPolicy(Dictionary<int, int> policy)
     {
+        print("Following policy...");
+        stop_animation = true;
+        float cached_AnimationTime = AnimationTime;
         while (AnimationTime > 0)
         {
             int hand_state = handControl.GetState();
@@ -360,19 +340,29 @@ public class QLearning : MonoBehaviour
             AnimationTime -= Time.deltaTime;
         }
 
+        AnimationTime = cached_AnimationTime;
+        stop_animation = false;
+        if (!training_complete)
+            StartCoroutine("MoveHand");
+    }
+
+    IEnumerator MoveHand()
+    {
+        print("Moving hand...");
         Transform cached_parent = scene_obj.transform.parent;
         scene_obj.transform.parent = GameObject.Find("hand_root").transform;
         scene_obj.GetComponent<Rigidbody>().isKinematic = true;
 
         while (!handControl.positioned_over_target)
         {
-            handControl.MoveOverTarget(0.005f);
+            handControl.MoveOverTarget(0.05f);
             yield return null;
         }
 
         scene_obj.transform.parent = cached_parent;
         scene_obj.GetComponent<Rigidbody>().isKinematic = false;
         train_release = true;
+        print("Done. Ready to train.");
     }
 
 

@@ -37,25 +37,25 @@ public class CollisionDetector : MonoBehaviour
         if (collision.collider.name.Contains("wall"))
         {
             ungripped = true;
-            print("wall hit");
+            //print("wall hit");
         }
 
         if (collision.collider.name == "Goal")
         {
             reached_goal = true;
-            print("goal reached");
+            //print("goal reached");
         }
 
         if(collision.collider.gameObject.transform.parent && collision.collider.gameObject.transform.parent.name == "Target")
         {
             hit_target = true;
-            print("target_hit");
+            //print("target_hit");
         }
 
-        if (collision.collider.name == "Floor")
+        if (collision.collider.name.Contains("Floor"))
         {
             hit_floor = true;
-            print("floor hit");
+            //print("floor hit");
         }
 
         //print("OnCollisionEnter " + number_contact.ToString());

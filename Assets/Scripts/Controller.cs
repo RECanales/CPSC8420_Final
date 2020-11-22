@@ -9,6 +9,7 @@ public class Controller : MonoBehaviour
     public float rotate_speed = 1; // how fast the joints rotate
     public float move_speed = 1; // how quick the hand moves
     public int max_height = 20;
+    public int max_horizontal_travel = 10;
     public int num_grips = 5;
     public float max_stretch = 0;
     List<Transform> joints = new List<Transform>();
@@ -76,6 +77,8 @@ public class Controller : MonoBehaviour
 
     void InputListener()
     {
+        if (IsTerminal("grasp"))
+            print("Terminal");
         if (Input.GetKeyDown(KeyCode.Q))
         {
             MoveFinger(0, "close");
@@ -84,20 +87,35 @@ public class Controller : MonoBehaviour
             MoveFinger(3, "close");
             MoveFinger(4, "close");
         }
+
+        if(Input.GetKeyDown(KeyCode.A))
+        {
+            MoveFinger(0, "open");
+            MoveFinger(1, "open");
+            MoveFinger(2, "open");
+            MoveFinger(3, "open");
+            MoveFinger(4, "open");
+        }
         //else MoveFinger(0, "open");
         //else MoveFinger(4, "open");
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
-            MoveHand("up");
-
-        if (Input.GetKey(KeyCode.DownArrow))
             MoveHand("right");
 
-        if (Input.GetKey(KeyCode.RightArrow))
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+            MoveHand("left");
+
+        if (Input.GetKeyDown(KeyCode.RightArrow))
+            MoveHand("backward");
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
             MoveHand("forward");
 
-        if (Input.GetKey(KeyCode.LeftArrow))
-            MoveHand("backward");
+        if (Input.GetKeyDown(KeyCode.W))
+            MoveHand("up");
+
+        if (Input.GetKeyDown(KeyCode.S))
+            MoveHand("down");
 
         if (Input.GetKeyDown(KeyCode.Space))
             ResetState();
@@ -135,21 +153,9 @@ public class Controller : MonoBehaviour
         for(int i = 0; i < finger_states.Length; ++i)
             initial_finger_states[i] = finger_states[i];
         for(int i = 0; i < position_state.Length; ++i)
-            initial_position_state[i] = 0;
+            initial_position_state[i] = position_state[i];
 
         initial_grip_state = grip_state;
-    }
-
-    public bool ObjectOnTarget(GameObject scene_obj)
-    {
-        Vector3 target_position, current_position;
-
-        // ignore height (y)
-        target_position = new Vector3(target.transform.position.x, hand.transform.position.y, target.transform.position.z);
-        current_position = scene_obj.transform.position;
-        if (Vector3.Magnitude(target_position - current_position) > 0.01f)
-            return false;
-        return true;
     }
 
     public void MoveOverTarget(float speed)
@@ -211,13 +217,6 @@ public class Controller : MonoBehaviour
 
     public void MoveHand(string direction)
     {
-        if (Mathf.Abs(position_state[0]) > 4)
-            return;
-        if (Mathf.Abs(position_state[1]) > 4)
-            return;
-        //if (position_state[2] > max_height - 1 || position_state[2] <= 0)
-            //return;
-
         if (position_state[2] < max_height - 1 && direction == "up")
         {
             hand.transform.position += new Vector3(0, move_speed, 0);
@@ -226,29 +225,29 @@ public class Controller : MonoBehaviour
         else if (position_state[2] > 0 && direction == "down")
         {
             hand.transform.position += new Vector3(0, -move_speed, 0);
-            position_state[1] -= 1;
+            position_state[2] -= 1;
         }
-        else if (direction == "right")
+        else if (position_state[0] < (max_horizontal_travel / 2) - 1 && direction == "right")
         {
             hand.transform.position += new Vector3(move_speed, 0, 0);
             position_state[0] += 1;
         }
-        else if (direction == "left")
+        else if (position_state[0] > -(max_horizontal_travel / 2) + 1 && direction == "left")
         {
             hand.transform.position += new Vector3(-move_speed, 0, 0);
             position_state[0] -= 1;
         }
-        else if (direction == "forward")
+        else if (position_state[1] < (max_horizontal_travel / 2) - 1 && direction == "forward")
         {
             hand.transform.position += new Vector3(0, 0, move_speed);
             position_state[1] += 1;
         }
-        else if (direction == "backward")
+        else if (position_state[1] > -(max_horizontal_travel / 2) + 1 && direction == "backward")
         {
             hand.transform.position += new Vector3(0, 0, -move_speed);
             position_state[1] -= 1;
         }
-
+        //print(position_state[0].ToString() + "," + position_state[1].ToString() + "," + position_state[2].ToString());
         //centerOfHand.transform.position = GetCenterOfHand();
     }
 
@@ -272,12 +271,12 @@ public class Controller : MonoBehaviour
 
     public int GetState()
     {
-     
         int yMax = max_height;
-        int xMax = 10;
+        int xMax = max_horizontal_travel;
+        int zMax = max_horizontal_travel;
         // first, position (columns of Q table)
         int x = (int)Mathf.Min(position_state[0] + (xMax / 2) - 1, xMax-1);
-        int z = (int)Mathf.Min(position_state[1] + (xMax / 2) - 1, xMax-1);
+        int z = (int)Mathf.Min(position_state[1] + (zMax / 2) - 1, zMax-1);
         int y = (int)Mathf.Min(position_state[2], yMax - 1);
         
         if (x < 0)
@@ -296,31 +295,41 @@ public class Controller : MonoBehaviour
         if (h_idx < 0)
             h_idx = 0;
 
+        int max_rot = (int)(max_joint_rotation / rotate_speed);
+
         //(width * height * z) + (width * y) + x
-        int state_idx = (yMax * (int)(max_joint_rotation / rotate_speed) * grip_state) + (yMax * h_idx) + y;
+        //int state_idx = (yMax * (int)(max_joint_rotation / rotate_speed) * grip_state) + (yMax * h_idx) + y; // up/down, grip, finger rot
         //int state_idx = h_idx * (int)(max_joint_rotation / rotate_speed) + y; // only move up
+        int state_idx = y + h_idx * yMax + grip_state * yMax * max_rot + x * yMax * max_rot * num_grips + z * yMax * max_rot * num_grips * xMax;
 
         //state_idx = x + y * xMax + z * xMax * yMax + h_idx * xMax * xMax * yMax;
-        Debug.Assert(state_idx < yMax * num_grips * (int)(max_joint_rotation / rotate_speed));
+        //Debug.Assert(state_idx < yMax * num_grips * max_rot);
+        Debug.Assert(state_idx < yMax * xMax * zMax * num_grips * max_rot);
         return state_idx;
     }
 
 
     public bool IsTerminal(string policy)
     {
-        /*
+        
         // hand has moved up to max height
         if ((policy == "grasp" && position_state[2] >= max_height - 1) || (policy == "release" && position_state[2] <= 0))
-            return true;*/
+            return true;
 
         // all the way closed or all the way open
         if ((policy == "grasp" && finger_states[0] >= max_joint_rotation - 1) || (policy == "release" && finger_states[0] <= 0))
             return true;
 
         if (policy == "grasp")
-            return GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().ungripped;
+        {
+            float x_dist = GameObject.FindGameObjectWithTag("Ball").transform.position.x - GetCenterOfHand().x;
+            float z_dist = GameObject.FindGameObjectWithTag("Ball").transform.position.z - GetCenterOfHand().z;
+            if (Mathf.Abs(x_dist) > 2*move_speed * max_horizontal_travel || Mathf.Abs(z_dist) > 2*move_speed * max_horizontal_travel)
+                return true;
+        }
         else
             return GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().hit_floor || GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().hit_target;
+        return false;
     }
 
     public void ResetState()
