@@ -278,13 +278,6 @@ public class Controller : MonoBehaviour
         int x = (int)Mathf.Min(position_state[0] + (xMax / 2) - 1, xMax-1);
         int z = (int)Mathf.Min(position_state[1] + (zMax / 2) - 1, zMax-1);
         int y = (int)Mathf.Min(position_state[2], yMax - 1);
-        
-        if (x < 0)
-            x = 0;
-        if (z < 0)
-            z = 0;
-        if (y < 0)
-            y = 0;
 
         //int pos_idx = 40 * x + z; // serve as X index (size X*Z)
 
@@ -311,24 +304,37 @@ public class Controller : MonoBehaviour
 
     public bool IsTerminal(string policy)
     {
-        
-        // hand has moved up to max height
-        if ((policy == "grasp" && position_state[2] >= max_height - 1) || (policy == "release" && position_state[2] <= 0))
-            return true;
 
-        // all the way closed or all the way open
-        if ((policy == "grasp" && finger_states[0] >= max_joint_rotation - 1) || (policy == "release" && finger_states[0] <= 0))
-            return true;
+        // hand has moved up to max height
+        //if ((policy == "grasp" && position_state[2] >= max_height - 1) || (policy == "release" && position_state[2] <= 0))
+        //return true;
 
         if (policy == "grasp")
         {
             float x_dist = GameObject.FindGameObjectWithTag("Ball").transform.position.x - GetCenterOfHand().x;
             float z_dist = GameObject.FindGameObjectWithTag("Ball").transform.position.z - GetCenterOfHand().z;
-            if (Mathf.Abs(x_dist) > 2*move_speed * max_horizontal_travel || Mathf.Abs(z_dist) > 2*move_speed * max_horizontal_travel)
+            if (Mathf.Abs(x_dist) > 2 * move_speed * max_horizontal_travel || Mathf.Abs(z_dist) > 2 * move_speed * max_horizontal_travel)
+                return true;
+            if (position_state[2] >= max_height - 1 && finger_states[0] >= max_joint_rotation - 1)
                 return true;
         }
+
         else
-            return GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().hit_floor || GameObject.FindGameObjectWithTag("Ball").GetComponent<CollisionDetector>().hit_target;
+        {
+            if (finger_states[0] <= 0)
+            {
+                return true;
+            }
+
+            GameObject ball = GameObject.FindGameObjectWithTag("Ball");
+            if (ball.GetComponent<CollisionDetector>().terminalCollision)
+                return true;
+        }
+
+        // all the way closed or all the way open
+        //if ((policy == "grasp" && finger_states[0] >= max_joint_rotation - 1) || (policy == "release" && finger_states[0] <= 0))
+            //return true;
+
         return false;
     }
 

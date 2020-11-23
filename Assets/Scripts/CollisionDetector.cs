@@ -8,35 +8,31 @@ public class CollisionDetector : MonoBehaviour
     // objects that are to be grasped need a collider attached (convex preferred)
     int prev_contact = 0;
     public int number_contact = 0;
-    public bool ungripped = false;
+    public bool wall_hit = false;
     public bool reached_goal = false;
     public bool hit_target = false;
     public bool hit_floor = false;
+    public bool terminalCollision = false;
+    string[] finger_names = new string[5] { "thumb", "index", "middle", "ring", "pinky" };
+    List<GameObject> contacts = new List<GameObject>();
+
     void Start()
     {
-        
     }
 
     public void ResetState()
     {
         prev_contact = 0;
         number_contact = 0;
-        ungripped = reached_goal = hit_target = hit_floor = false;
+        wall_hit = reached_goal = hit_target = hit_floor = terminalCollision = false;
+        contacts = new List<GameObject>();
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        prev_contact = number_contact;
-        if (collision.collider.name.Contains("tip") || collision.collider.name.Contains("1"))
-        {
-            number_contact++;
-
-            //ungripped = !collision.collider.gameObject.transform.parent.name.Contains("thumb");
-            //number_contact = Mathf.Min(5, number_contact);
-        }
         if (collision.collider.name.Contains("wall"))
         {
-            ungripped = true;
+            wall_hit = true;
             //print("wall hit");
         }
 
@@ -49,27 +45,30 @@ public class CollisionDetector : MonoBehaviour
         if(collision.collider.gameObject.transform.parent && collision.collider.gameObject.transform.parent.name == "Target")
         {
             hit_target = true;
+            terminalCollision = true;
             //print("target_hit");
         }
 
         if (collision.collider.name.Contains("Floor"))
         {
             hit_floor = true;
+            terminalCollision = true;
             //print("floor hit");
         }
 
+
+        /*if (!contacts.Contains(collision.gameObject) && collision.collider.name.Contains("tip"))
+        {
+            number_contact++;
+            contacts.Add(collision.gameObject);
+        }*/
+        number_contact++;
         //print("OnCollisionEnter " + number_contact.ToString());
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        prev_contact = number_contact;
-        if (collision.collider.name.Contains("tip") || collision.collider.name.Contains("1"))
-        {
-            number_contact--;
-
-            //number_contact = Mathf.Max(0, number_contact);
-        }
+        number_contact--;
         if (collision.collider.name == "Goal")
             reached_goal = false;
         //print("OnCollisionExit " + number_contact.ToString());

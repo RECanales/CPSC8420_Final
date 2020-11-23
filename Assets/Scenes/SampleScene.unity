@@ -1857,10 +1857,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   number_contact: 0
-  ungripped: 0
+  wall_hit: 0
   reached_goal: 0
   hit_target: 0
   hit_floor: 0
+  terminalCollision: 0
 --- !u!1 &315531688
 GameObject:
   m_ObjectHideFlags: 0
@@ -3288,12 +3289,12 @@ MonoBehaviour:
   controller: {fileID: 1783497146}
   rewardDisplay: {fileID: 1290136573}
   scene_obj: {fileID: 1997137472}
-  PolicyType: 0
+  PolicyType: 1
   NUM_ACTIONS: 10
   gamma: 0.95
   eps: 1
   alpha: 0.1
-  max_iterations: 10000
+  max_iterations: 1000
   iteration_number: 0
   episode_loop: 0
   AnimationTime: 3
@@ -5736,10 +5737,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   number_contact: 0
-  ungripped: 0
+  wall_hit: 0
   reached_goal: 0
   hit_target: 0
   hit_floor: 0
+  terminalCollision: 0
 --- !u!54 &1204971137
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -8413,10 +8415,10 @@ MonoBehaviour:
   hand: {fileID: 214258208}
   target: {fileID: 714264715}
   debug: 0
-  rotate_speed: 5
-  move_speed: 0.05
-  max_height: 6
-  max_horizontal_travel: 6
+  rotate_speed: 10
+  move_speed: 0.075
+  max_height: 4
+  max_horizontal_travel: 4
   num_grips: 2
   max_stretch: 20
   ready: 0
@@ -9275,10 +9277,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   number_contact: 0
-  ungripped: 0
+  wall_hit: 0
   reached_goal: 0
   hit_target: 0
   hit_floor: 0
+  terminalCollision: 0
 --- !u!54 &1997137478
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -9287,9 +9290,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1997137472}
   serializedVersion: 2
-  m_Mass: 30
-  m_Drag: 0.1
-  m_AngularDrag: 0.1
+  m_Mass: 1
+  m_Drag: 1
+  m_AngularDrag: 1
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0

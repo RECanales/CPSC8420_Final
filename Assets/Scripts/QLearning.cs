@@ -43,6 +43,8 @@ public class QLearning : MonoBehaviour
     float initial_dist;
     float DelayTime = 1f; // delay between when animation stops and starts again
     public float AnimationTime = 4f; // playback for 4 seconds
+    float waitTime = 1f;
+    bool waitComplete = false;
 
     void Start()
     {
@@ -63,7 +65,7 @@ public class QLearning : MonoBehaviour
         }
 
         scene_obj.AddComponent<CollisionDetector>();
-        Time.fixedDeltaTime /= 5; // faster physics
+        Time.fixedDeltaTime /= 10; // faster physics
     }
 
     void Step(int action)
@@ -119,6 +121,20 @@ public class QLearning : MonoBehaviour
                 handControl.AdjustGrip(1);
                 break;
         }
+    }
+
+    IEnumerator Delay()
+    {
+        waitComplete = false;
+        float CachedTime = waitTime;
+        while (waitTime > 0)
+        {
+            waitTime -= Time.deltaTime;
+            yield return null;
+        }
+
+        waitTime = CachedTime;
+        waitComplete = true;
     }
 
     // Update is called once per frame
@@ -219,7 +235,14 @@ public class QLearning : MonoBehaviour
                 bool terminal = handControl.IsTerminal(_policy);
 
                 // make sure physics updates before getting reward
-                yield return new WaitForFixedUpdate();
+                if(PolicyType == WhichPolicy.Grasping)
+                    yield return new WaitForFixedUpdate();
+
+                if(PolicyType == WhichPolicy.Releasing && action == 7)
+                {
+                    StartCoroutine("Delay");
+                    yield return new WaitUntil(() => waitComplete || scene_obj.GetComponent<CollisionDetector>().terminalCollision);
+                }
 
                 float r = Reward();
                 float target = r;
@@ -251,6 +274,8 @@ public class QLearning : MonoBehaviour
             logEpisode.Add(iteration_number, episode_loop);
             logReward.Add(iteration_number, total_reward);
             eps = Mathf.Max(0.1f, (1 - (float)i / (float)(max_iterations)));
+            //if(PolicyType == WhichPolicy.Releasing)
+                //yield return new WaitUntil(() => scene_obj.GetComponent<CollisionDetector>().terminalCollision);
         }
 
         iteration_number = max_iterations;
