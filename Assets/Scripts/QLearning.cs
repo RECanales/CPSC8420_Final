@@ -19,11 +19,12 @@ public class QLearning : MonoBehaviour
     Quaternion original_obj_rotation;
 
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
-    public int NUM_ACTIONS = 4; // move hand in some direction, rotate fingers in
+    public int NUM_ACTIONS = 10; // move hand in some direction, rotate fingers in
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
     public int max_iterations = 1000;
+    public int max_episode_steps = 100;
     public int iteration_number = 0;
     public int episode_loop = 0;
 
@@ -218,7 +219,6 @@ public class QLearning : MonoBehaviour
             episode_loop = 0;
             while (true)
             {
-                
                 Debug.Assert(s < Q.Count);
                 int action = Random.Range(0, NUM_ACTIONS); // random action
                 float random_val = Random.value;
@@ -228,6 +228,7 @@ public class QLearning : MonoBehaviour
 
                 Debug.Assert(action < Q[0].Count);
 
+                int cachedState = handControl.GetState();
                 Step(action);
                 int next_state = handControl.GetState();
 
@@ -244,7 +245,15 @@ public class QLearning : MonoBehaviour
                     yield return new WaitUntil(() => waitComplete || scene_obj.GetComponent<CollisionDetector>().terminalCollision);
                 }
 
-                float r = Reward();
+                //if (terminal)
+                    //break;
+                //float r = Reward();
+                float r = 0;
+                if (next_state == cachedState)
+                    r = -1;
+                else
+                    r = Reward();
+
                 float target = r;
                 if (!terminal)
                 {
@@ -266,16 +275,14 @@ public class QLearning : MonoBehaviour
                 total_reward += r;
                 total_iterations++;
 
-                if (terminal /*|| episode_loop > 1000*/) // prevent infinite loop
+                if (terminal || episode_loop > max_episode_steps)
                     break;
             }
 
             iteration_number = i;
             logEpisode.Add(iteration_number, episode_loop);
-            logReward.Add(iteration_number, total_reward);
+            logReward.Add(iteration_number, total_reward/(float)total_iterations);
             eps = Mathf.Max(0.1f, (1 - (float)i / (float)(max_iterations)));
-            //if(PolicyType == WhichPolicy.Releasing)
-                //yield return new WaitUntil(() => scene_obj.GetComponent<CollisionDetector>().terminalCollision);
         }
 
         iteration_number = max_iterations;

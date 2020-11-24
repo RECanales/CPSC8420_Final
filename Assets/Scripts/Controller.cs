@@ -309,6 +309,11 @@ public class Controller : MonoBehaviour
         //if ((policy == "grasp" && position_state[2] >= max_height - 1) || (policy == "release" && position_state[2] <= 0))
         //return true;
 
+        /*for(int i = 0; i < position_state.Length; ++i)
+        {
+            if(position_state[i])
+        }*/
+
         if (policy == "grasp")
         {
             float x_dist = GameObject.FindGameObjectWithTag("Ball").transform.position.x - GetCenterOfHand().x;

@@ -3295,6 +3295,7 @@ MonoBehaviour:
   eps: 1
   alpha: 0.1
   max_iterations: 1000
+  max_episode_steps: 1000
   iteration_number: 0
   episode_loop: 0
   AnimationTime: 3
@@ -8415,11 +8416,11 @@ MonoBehaviour:
   hand: {fileID: 214258208}
   target: {fileID: 714264715}
   debug: 0
-  rotate_speed: 10
+  rotate_speed: 12
   move_speed: 0.075
   max_height: 4
   max_horizontal_travel: 4
-  num_grips: 2
+  num_grips: 3
   max_stretch: 20
   ready: 0
   max_joint_rotation: 60
