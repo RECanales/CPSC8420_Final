@@ -10,7 +10,7 @@ public class QLearning : MonoBehaviour
     public GameObject controller;
     public GameObject rewardDisplay;
     public GameObject scene_obj; // object being interacted with
-    public enum WhichPolicy { Grasping, Releasing }; // pick which policy is being learned
+    public enum WhichPolicy { Grasping, Releasing, Playback }; // pick which policy is being learned
     public WhichPolicy PolicyType = WhichPolicy.Grasping;
     WhichPolicy CurrentPolicy = WhichPolicy.Grasping;
     
@@ -30,6 +30,8 @@ public class QLearning : MonoBehaviour
 
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
+    Dictionary<int, int> grasp_policy = new Dictionary<int, int>(); // grasping policy
+    Dictionary<int, int> release_policy = new Dictionary<int, int>(); // release policy
     Dictionary<int, float> logReward = new Dictionary<int, float>(); // logger
     Dictionary<int, float> logEpisode = new Dictionary<int, float>(); // logger
 
@@ -46,6 +48,7 @@ public class QLearning : MonoBehaviour
     public float AnimationTime = 4f; // playback for 4 seconds
     float waitTime = 1f;
     bool waitComplete = false;
+    bool startPlayback = false;
 
     void Start()
     {
@@ -67,6 +70,12 @@ public class QLearning : MonoBehaviour
 
         scene_obj.AddComponent<CollisionDetector>();
         Time.fixedDeltaTime /= 10; // faster physics
+
+        if (PolicyType == WhichPolicy.Playback)
+        {
+            grasp_policy = LoadPolicy("Grasping_Policy.csv");
+            release_policy = LoadPolicy("Release_Policy.csv");
+        }
     }
 
     void Step(int action)
@@ -141,72 +150,90 @@ public class QLearning : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (handControl.ready && !training_complete) // wait until hand is done following grasping policy and moved over target
+        if (PolicyType == WhichPolicy.Grasping || PolicyType == WhichPolicy.Releasing)
         {
-            if (PolicyType == WhichPolicy.Releasing && !follow_policy)
+            if (handControl.ready && !training_complete) // wait until hand is done following grasping policy and moved over target
             {
-                handControl.CacheState();
-                handControl.ResetState();
-                follow_policy = true;
-                Dictionary<int, int> GraspingPolicy = LoadPolicy("Grasping_Policy.csv");
-                StartCoroutine("FollowPolicy", GraspingPolicy);
-                return;
-            }
-
-            if (!start_training && (PolicyType == WhichPolicy.Grasping || train_release)) // makes sure hand is intialized before training
-            {
-                handControl.CacheState();
-                handControl.ResetState();
-                if (PolicyType == WhichPolicy.Grasping)
-                    initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
-                else
-                    initial_dist = handControl.TargetObjDist(scene_obj);
-
-                // store object position & rotation
-                original_obj_position = scene_obj.transform.position;
-                original_obj_rotation = scene_obj.transform.rotation;
-
-                start_training = true;
-                print("State cached. Training...");
-                StartCoroutine("PhysicsQLearn");
-            }
-
-            else if(start_training)
-            {
-                if (iteration_number < max_iterations)
+                if (PolicyType == WhichPolicy.Releasing && !follow_policy)
                 {
-                    // compute average reward & display on screen
-                    float avg_reward = total_reward / (float)total_iterations;
-                    rewardDisplay.GetComponent<Text>().text = "Average reward: " + avg_reward.ToString("F3");
+                    handControl.CacheState();
+                    handControl.ResetState();
+                    follow_policy = true;
+                    Dictionary<int, int> GraspingPolicy = LoadPolicy("Grasping_Policy.csv");
+                    StartCoroutine("FollowPolicy", GraspingPolicy);
+                    return;
                 }
 
-                else
+                if (!start_training && (PolicyType == WhichPolicy.Grasping || train_release)) // makes sure hand is intialized before training
                 {
-                    if (!training_complete)
+                    handControl.CacheState();
+                    handControl.ResetState();
+                    if (PolicyType == WhichPolicy.Grasping)
+                        initial_dist = Vector3.Magnitude(scene_obj.transform.position - handControl.GetCenterOfHand());
+                    else
+                        initial_dist = handControl.TargetObjDist(scene_obj);
+
+                    // store object position & rotation
+                    original_obj_position = scene_obj.transform.position;
+                    original_obj_rotation = scene_obj.transform.rotation;
+
+                    start_training = true;
+                    print("State cached. Training...");
+                    StartCoroutine("PhysicsQLearn");
+                }
+
+                else if (start_training)
+                {
+                    if (iteration_number < max_iterations)
                     {
-                        print("Training complete.");
-                        ResetState();
-                        StopCoroutine("PhysicsQLearn");
+                        // compute average reward & display on screen
+                        float avg_reward = total_reward / (float)total_iterations;
+                        rewardDisplay.GetComponent<Text>().text = "Average reward: " + avg_reward.ToString("F3");
+                    }
 
-                        // RC: I made a function to clean this up
-                        string policyName = PolicyType == WhichPolicy.Grasping ? "Grasping_Policy.csv" : "Release_Policy";
-                        WriteCSV(policyName, pi); // write policy
-                        WriteCSV("EpisodeLog.csv", logEpisode);
-                        WriteCSV("RewardLog.csv", logReward);
-                        print("Learned Policy has been written to " + policyName);
-                        print("Episode and reward values have been logged.");
+                    else
+                    {
+                        if (!training_complete)
+                        {
+                            print("Training complete.");
+                            ResetState();
+                            StopCoroutine("PhysicsQLearn");
 
-                        training_complete = true;
-                        //StartCoroutine
+                            // RC: I made a function to clean this up
+                            string policyName = PolicyType == WhichPolicy.Grasping ? "Grasping_Policy.csv" : "Release_Policy.csv";
+                            WriteCSV(policyName, pi); // write policy
+                            string episodeName = PolicyType == WhichPolicy.Grasping ? "Grasp_EpisodeLog.csv" : "Release_EpisodeLog.csv";
+                            WriteCSV(episodeName, logEpisode);
+                            string rewardName = PolicyType == WhichPolicy.Grasping ? "Grasp_RewardLog.csv" : "Release_RewardLog.csv";
+                            WriteCSV(rewardName, logReward);
+                            print("Learned Policy has been written to " + policyName);
+                            print("Episode and reward values have been logged.");
+
+                            training_complete = true;
+                            //StartCoroutine
+                        }
                     }
                 }
             }
+
+            if (training_complete && !stop_animation)
+            {
+                ResetState();
+                StartCoroutine("FollowPolicy", pi); // follow learned policy, loop
+            }
         }
 
-        if(training_complete && !stop_animation)
+        if(!startPlayback && PolicyType == WhichPolicy.Playback && handControl.ready)
         {
+            handControl.CacheState();
             ResetState();
-            StartCoroutine("FollowPolicy", pi); // follow learned policy, loop
+
+            // store object position & rotation
+            original_obj_position = scene_obj.transform.position;
+            original_obj_rotation = scene_obj.transform.rotation;
+
+            startPlayback = true;
+            StartCoroutine("PlayBack");
         }
     }
 
@@ -358,6 +385,18 @@ public class QLearning : MonoBehaviour
         return loaded_policy;
     }
 
+    IEnumerator PlayBack()
+    {
+        while (true)
+        {
+            if (!stop_animation)
+            {
+                StartCoroutine("FollowPolicy", grasp_policy);
+            }
+            yield return null;
+        }
+    }
+
     IEnumerator FollowPolicy(Dictionary<int, int> policy)
     {
         print("Following policy...");
@@ -394,7 +433,9 @@ public class QLearning : MonoBehaviour
         scene_obj.transform.parent = cached_parent;
         scene_obj.GetComponent<Rigidbody>().isKinematic = false;
         train_release = true;
-        print("Done. Ready to train.");
+
+        if(PolicyType != WhichPolicy.Playback)
+            print("Done. Ready to train.");
     }
 
 
