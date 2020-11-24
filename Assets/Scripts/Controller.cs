@@ -171,7 +171,10 @@ public class Controller : MonoBehaviour
 
         // if distance is greater than some amount, keep moving
         if (Vector3.Magnitude(target_position - current_position) > 0.1f)
+        {
+            positioned_over_target = false;
             hand.transform.position = current_position + speed * Vector3.Normalize(target_position - current_position);
+        }
         else
             positioned_over_target = true;
         //centerOfHand.transform.position = GetCenterOfHand();
@@ -346,6 +349,8 @@ public class Controller : MonoBehaviour
     public void ResetState()
     {
         hand.transform.position = initial_pos;
+        positioned_over_target = false;
+
         //centerOfHand.transform.position = GetCenterOfHand();
         for (int i = 0; i < joints.Count; ++i)
             joints[i].rotation = original_rotation[i];
