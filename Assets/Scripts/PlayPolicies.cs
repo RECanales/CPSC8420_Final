@@ -120,14 +120,8 @@ public class PlayPolicies: MonoBehaviour
 
     IEnumerator Delay()
     {
+        yield return new WaitForSecondsRealtime(delayTime);
         ResetState();
-        float cached_delayTime = delayTime;
-        while(delayTime > 0)
-        {
-            delayTime -= Time.deltaTime;
-            yield return null;
-        }
-        delayTime = cached_delayTime;
         loop = true;
     }
 
@@ -137,7 +131,7 @@ public class PlayPolicies: MonoBehaviour
 
         // grasping first
         float cached_AnimationTime = AnimationTime;
-        while(AnimationTime > 0)
+        while(AnimationTime > 0 && !handControl.IsTerminal("grasp", scene_obj))
         {
             int hand_state = handControl.GetState();
             int action = grasp_policy[hand_state];
@@ -162,7 +156,7 @@ public class PlayPolicies: MonoBehaviour
 
         // release
         AnimationTime = cached_AnimationTime;
-        while (AnimationTime > 0)
+        while (AnimationTime > 0 && !scene_obj.GetComponent<CollisionDetector>().hit_target)
         {
             int hand_state = handControl.GetState();
             int action = release_policy[hand_state];

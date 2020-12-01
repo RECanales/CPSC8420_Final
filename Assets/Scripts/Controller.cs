@@ -31,7 +31,7 @@ public class Controller : MonoBehaviour
     int grip_state = 0; // was 1 when close was enabled
     int initial_grip_state = 0;
     int[] finger_indices = new int[5] { 0, 3, 6, 9, 12 };
-    //GameObject centerOfHand;
+    GameObject centerOfHand;
     bool terminal = false;
 
     Vector3 original_position, initial_pos; // original = center, initial = root
@@ -51,8 +51,9 @@ public class Controller : MonoBehaviour
             TraverseHierarchy(hand.transform);
             //centerOfHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
             //centerOfHand.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
-            //centerOfHand.transform.position = original_position;
+            //centerOfHand.transform.position = GetCenterOfHand();
             //centerOfHand.name = "Goal";
+            //centerOfHand.transform.parent = hand.transform;
             //centerOfHand.GetComponent<BoxCollider>().enabled = false;
 
             // setting intial distance
