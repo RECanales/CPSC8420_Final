@@ -5,13 +5,22 @@ using UnityEngine;
 public class Controller : MonoBehaviour
 {
     public GameObject hand, target;
+    [Tooltip("When debug is true, keyboard can be used to control hand.")]
     public bool debug = false;
+    [Tooltip("The number of degrees each finger joint rotates each time an open/close action is taken.")]
     public float rotate_speed = 1; // how fast the joints rotate
+    [Tooltip("The distance the hand moves each time a move foreward, backward, right, left, or up action is taken.")]
     public float move_speed = 1; // how quick the hand moves
+    [Tooltip("How many steps up (Y-axis) the hand can move. This number is multiplied by move_speed.")]
     public int max_height = 20;
+    [Tooltip("How many steps on the XZ plane the hand can move. This number is multiplied by move_speed.")]
     public int max_horizontal_travel = 10;
+    [Tooltip("How many grips the hand can take. When this number is higher, the hand stretches more smoothly.")]
     public int num_grips = 5;
+    [Tooltip("This determines how stretched open the hand can be.")]
     public float max_stretch = 0;
+    [Tooltip("This determines how closed the hand can be by limiting the finger joint rotation while closing")]
+    public float max_joint_rotation = 60;
     List<Transform> joints = new List<Transform>();
     List<GameObject> fingertips = new List<GameObject>();
     List<int> center_indices = new List<int>();
@@ -31,7 +40,6 @@ public class Controller : MonoBehaviour
     Vector3 original_obj_position;
     Quaternion original_obj_rotation;
     public bool ready = false;
-    public float max_joint_rotation = 70;
     public bool positioned_over_target = false;
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
 

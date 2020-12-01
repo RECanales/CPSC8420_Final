@@ -8,9 +8,12 @@ using UnityEngine.UI;
 public class QLearning : MonoBehaviour
 {
     public GameObject controller;
-    public GameObject rewardDisplay;
+    public GameObject rewardDisplay, stopButton;
+
+    [Tooltip("Object in scene that the hand will be interacting with.")]
     public GameObject scene_obj; // object being interacted with
     public enum WhichPolicy { Grasping, Releasing }; // pick which policy is being learned
+    [Tooltip("Which policy is being trained.")]
     public WhichPolicy PolicyType = WhichPolicy.Grasping;
     WhichPolicy CurrentPolicy = WhichPolicy.Grasping;
     
@@ -19,21 +22,34 @@ public class QLearning : MonoBehaviour
     Quaternion original_obj_rotation;
 
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
+    [Tooltip("Number of possible actions for hand to take.")]
     public int NUM_ACTIONS = 10; // move hand in some direction, rotate fingers in
+    [Tooltip("Maximum number of steps per episode (inner loop).")]
     public int max_episode_steps = 100;
+    [Tooltip("Simulation speed while training. 1 = realtime, < 1 = slower, > 1 = faster.")]
+    public float simulation_speed = 5;
+    [Tooltip("Discount factor.")]
     public float gamma = 0.95f; // discount factor
+    [Tooltip("Starting value for epsilon (decaying epsilon-greedy exploration).")]
     public float eps = 1.0f;    // epsilon-greedy parameter
+    [Tooltip("Learning rate.")]
     public float alpha = 0.1f;  // learning rate
-    public bool stop_training = false;
+    [Tooltip("Maximum number of episodes.")]
     public int max_iterations = 1000;
+    [Tooltip("Current episode iteration.")]
     public int iteration_number = 0;
-    public int episode_loop = 0;
+    [Tooltip("How long a policy will be played before stopping (s).")]
+    public float AnimationTime = 4f; // playback for 4 seconds
+    public float waitTime = 1f;
+
+    int episode_loop = 0;
 
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
     Dictionary<int, float> logReward = new Dictionary<int, float>(); // logger
     Dictionary<int, float> logEpisode = new Dictionary<int, float>(); // logger
 
+    bool stop_training = false;
     bool training_complete = false;
     bool start_training = false;
     bool stop_animation = false;
@@ -44,8 +60,6 @@ public class QLearning : MonoBehaviour
     float total_reward = 0;
     float initial_dist;
     float DelayTime = 1f; // delay between when animation stops and starts again
-    public float AnimationTime = 4f; // playback for 4 seconds
-    public float waitTime = 1f;
     bool waitComplete = false;
     bool startPlayback = false;
 
@@ -169,8 +183,9 @@ public class QLearning : MonoBehaviour
                 original_obj_rotation = scene_obj.transform.rotation;
 
                 start_training = true;
-                Time.timeScale = 5;
-                Time.fixedDeltaTime /= 5;
+                Time.timeScale = simulation_speed;
+                Time.fixedDeltaTime /= simulation_speed;
+                stopButton.SetActive(true);
                 print("State cached. Training...");
                 StartCoroutine("PhysicsQLearn");
             }
@@ -204,7 +219,7 @@ public class QLearning : MonoBehaviour
 
                         training_complete = true;
                         Time.timeScale = 1;
-                        Time.fixedDeltaTime *= 5;
+                        Time.fixedDeltaTime *= simulation_speed;
                     }
                 }
             }
@@ -404,6 +419,12 @@ public class QLearning : MonoBehaviour
         scene_obj.GetComponent<Rigidbody>().isKinematic = false;
         train_release = true;
         print("Done. Ready to train.");
+    }
+
+    public void StopTraining()
+    {
+        stop_training = true;
+        stopButton.SetActive(false);
     }
 
 
