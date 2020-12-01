@@ -20,11 +20,12 @@ public class QLearning : MonoBehaviour
 
     int NUM_STATES = 100; // discretized hand position (2d 10x10 = 100 position grid for now) and finger rotation (0 - 60, @ rotate speed)
     public int NUM_ACTIONS = 10; // move hand in some direction, rotate fingers in
+    public int max_episode_steps = 100;
     public float gamma = 0.95f; // discount factor
     public float eps = 1.0f;    // epsilon-greedy parameter
     public float alpha = 0.1f;  // learning rate
+    public bool stop_training = false;
     public int max_iterations = 1000;
-    public int max_episode_steps = 100;
     public int iteration_number = 0;
     public int episode_loop = 0;
 
@@ -44,7 +45,7 @@ public class QLearning : MonoBehaviour
     float initial_dist;
     float DelayTime = 1f; // delay between when animation stops and starts again
     public float AnimationTime = 4f; // playback for 4 seconds
-    float waitTime = 1f;
+    public float waitTime = 1f;
     bool waitComplete = false;
     bool startPlayback = false;
 
@@ -57,7 +58,7 @@ public class QLearning : MonoBehaviour
         print("Number of states = " + NUM_STATES.ToString());
 
         // init all Q values to 0
-        for(int i = 0; i < NUM_STATES; ++i)
+        for (int i = 0; i < NUM_STATES; ++i)
         {
             List<float> action_list = new List<float>();
             for (int j = 0; j < NUM_ACTIONS; ++j)
@@ -66,8 +67,8 @@ public class QLearning : MonoBehaviour
             pi.Add(i, 0);
         }
 
-        scene_obj.AddComponent<CollisionDetector>();
-        Time.fixedDeltaTime /= 10; // faster physics
+        if(!scene_obj.GetComponent<CollisionDetector>())
+            scene_obj.AddComponent<CollisionDetector>();
     }
 
     void Step(int action)
@@ -129,12 +130,12 @@ public class QLearning : MonoBehaviour
     {
         waitComplete = false;
         float CachedTime = waitTime;
-        while (waitTime > 0)
-        {
-            waitTime -= Time.deltaTime;
-            yield return null;
-        }
-
+        //while (waitTime > 0)
+        //{
+        //waitTime -= Time.deltaTime;
+        //yield return null;
+        //}
+        yield return new WaitForSeconds(waitTime);
         waitTime = CachedTime;
         waitComplete = true;
     }
@@ -168,13 +169,15 @@ public class QLearning : MonoBehaviour
                 original_obj_rotation = scene_obj.transform.rotation;
 
                 start_training = true;
+                Time.timeScale = 5;
+                Time.fixedDeltaTime /= 5;
                 print("State cached. Training...");
                 StartCoroutine("PhysicsQLearn");
             }
 
             else if (start_training)
             {
-                if (iteration_number < max_iterations)
+                if (iteration_number < max_iterations && !stop_training)
                 {
                     // compute average reward & display on screen
                     float avg_reward = total_reward / (float)total_iterations;
@@ -200,7 +203,8 @@ public class QLearning : MonoBehaviour
                         print("Episode and reward values have been logged.");
 
                         training_complete = true;
-                        //StartCoroutine
+                        Time.timeScale = 1;
+                        Time.fixedDeltaTime *= 5;
                     }
                 }
             }
@@ -217,6 +221,9 @@ public class QLearning : MonoBehaviour
     {
         for (int i = 0; i < max_iterations; ++i)
         {
+            if(stop_training)
+                break;
+
             ResetState();
             int s = handControl.GetState();
             episode_loop = 0;
@@ -236,7 +243,7 @@ public class QLearning : MonoBehaviour
                 int next_state = handControl.GetState();
 
                 string _policy = PolicyType == WhichPolicy.Grasping ? "grasp" : "release";
-                bool terminal = handControl.IsTerminal(_policy);
+                bool terminal = handControl.IsTerminal(_policy, scene_obj);
 
                 // make sure physics updates before getting reward
                 if(PolicyType == WhichPolicy.Grasping)
@@ -245,12 +252,11 @@ public class QLearning : MonoBehaviour
                 if(PolicyType == WhichPolicy.Releasing && action == 7)
                 {
                     StartCoroutine("Delay");
+                    if (scene_obj.GetComponent<CollisionDetector>().terminalCollision)
+                        print("terminal");
                     yield return new WaitUntil(() => waitComplete || scene_obj.GetComponent<CollisionDetector>().terminalCollision);
                 }
 
-                //if (terminal)
-                    //break;
-                //float r = Reward();
                 float r = 0;
                 if (next_state == cachedState)
                     r = -1;
@@ -407,7 +413,7 @@ public class QLearning : MonoBehaviour
         {
             foreach (var pair in data)
             {
-                writer.WriteLine("{0},{1},", pair.Key, pair.Value);
+                writer.WriteLine("{0},{1}", pair.Key, pair.Value);
             }
         }
     }

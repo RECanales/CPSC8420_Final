@@ -258,7 +258,7 @@ public class QlearnDrop : MonoBehaviour
 
             Step(action);
             int curr_state = handControl.GetState();
-            bool terminal = handControl.IsTerminal("grasp");
+            bool terminal = handControl.IsTerminal("grasp", scene_obj);
             float r = Reward();
             float target = r;
             if (!terminal)

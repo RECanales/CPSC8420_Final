@@ -77,8 +77,8 @@ public class Controller : MonoBehaviour
 
     void InputListener()
     {
-        if (IsTerminal("grasp"))
-            print("Terminal");
+        //if (IsTerminal("grasp"))
+            //print("Terminal");
         if (Input.GetKeyDown(KeyCode.Q))
         {
             MoveFinger(0, "close");
@@ -305,7 +305,7 @@ public class Controller : MonoBehaviour
     }
 
 
-    public bool IsTerminal(string policy)
+    public bool IsTerminal(string policy, GameObject scene_obj)
     {
 
         // hand has moved up to max height
@@ -319,8 +319,8 @@ public class Controller : MonoBehaviour
 
         if (policy == "grasp")
         {
-            float x_dist = GameObject.FindGameObjectWithTag("Ball").transform.position.x - GetCenterOfHand().x;
-            float z_dist = GameObject.FindGameObjectWithTag("Ball").transform.position.z - GetCenterOfHand().z;
+            float x_dist = scene_obj.transform.position.x - GetCenterOfHand().x;
+            float z_dist = scene_obj.transform.position.z - GetCenterOfHand().z;
             if (Mathf.Abs(x_dist) > 2 * move_speed * max_horizontal_travel || Mathf.Abs(z_dist) > 2 * move_speed * max_horizontal_travel)
                 return true;
             if (position_state[2] >= max_height - 1 && finger_states[0] >= max_joint_rotation - 1)
@@ -334,8 +334,7 @@ public class Controller : MonoBehaviour
                 return true;
             }
 
-            GameObject ball = GameObject.FindGameObjectWithTag("Ball");
-            if (ball.GetComponent<CollisionDetector>().terminalCollision)
+            if (scene_obj.GetComponent<CollisionDetector>().terminalCollision)
                 return true;
         }
 
