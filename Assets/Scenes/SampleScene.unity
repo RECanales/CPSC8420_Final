@@ -1905,7 +1905,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &775038823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5380,7 +5380,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hand: {fileID: 214258208}
   target: {fileID: 714264715}
-  debug: 0
+  debug: 1
   rotate_speed: 12
   move_speed: 0.075
   max_height: 8
