@@ -22,7 +22,7 @@ data = np.loadtxt(path, delimiter=',', usecols = (0,1))
 plt.xlabel("Number of Iterations")
 plt.ylabel("Number of steps for the episode")
 #plt.ylabel("Average reward collected")
-title = f"Iterations vs. the Episode Length for the Object {policy} policy learned"
+title = f"Iteration vs. Episode Length"
 plt.title(title, fontsize=20)
 plt.plot(data[:,0],data[:,1])
-#plt.savefig(cwd + '/Graphs/Grasping_Reward_Graph.png')
+plt.savefig(cwd + '/Graphs/Grasping_Reward_Graph.png')
