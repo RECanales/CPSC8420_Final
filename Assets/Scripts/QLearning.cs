@@ -9,7 +9,6 @@ public class QLearning : MonoBehaviour
 {
     public GameObject controller;
     public GameObject rewardDisplay, stopButton;
-
     [Tooltip("Object in scene that the hand will be interacting with.")]
     public GameObject scene_obj; // object being interacted with
     public enum WhichPolicy { Grasping, Releasing }; // pick which policy is being learned
@@ -43,6 +42,7 @@ public class QLearning : MonoBehaviour
     public float waitTime = 1f;
 
     int episode_loop = 0;
+	string ObjectName = "";
 
     List<List<float>> Q = new List<List<float>>();  // Q values
     Dictionary<int, int> pi = new Dictionary<int, int>(); // policy
@@ -71,8 +71,10 @@ public class QLearning : MonoBehaviour
             handControl.max_horizontal_travel * (int)(handControl.max_joint_rotation / handControl.rotate_speed);
         print("Number of states = " + NUM_STATES.ToString());
 
-        // init all Q values to 0
-        for (int i = 0; i < NUM_STATES; ++i)
+		ObjectName = scene_obj.name;
+
+		// init all Q values to 0
+		for (int i = 0; i < NUM_STATES; ++i)
         {
             List<float> action_list = new List<float>();
             for (int j = 0; j < NUM_ACTIONS; ++j)
@@ -164,7 +166,7 @@ public class QLearning : MonoBehaviour
                 handControl.CacheState();
                 handControl.ResetState();
                 follow_policy = true;
-                Dictionary<int, int> GraspingPolicy = LoadPolicy("Grasping_Policy.csv");
+                Dictionary<int, int> GraspingPolicy = LoadPolicy("Grasping_Policy_" + ObjectName + ".csv");
                 StartCoroutine("FollowPolicy", GraspingPolicy);
                 return;
             }
@@ -208,11 +210,11 @@ public class QLearning : MonoBehaviour
                         StopCoroutine("PhysicsQLearn");
 
                         // RC: I made a function to clean this up
-                        string policyName = PolicyType == WhichPolicy.Grasping ? "Grasping_Policy.csv" : "Release_Policy.csv";
+                        string policyName = PolicyType == WhichPolicy.Grasping ? "Grasping_Policy_" + ObjectName: "Release_Policy_" + ObjectName;
                         WriteCSV(policyName, pi); // write policy
-                        string episodeName = PolicyType == WhichPolicy.Grasping ? "Grasp_EpisodeLog.csv" : "Release_EpisodeLog.csv";
+                        string episodeName = PolicyType == WhichPolicy.Grasping ? "Grasp_EpisodeLog_" + ObjectName : "Release_EpisodeLog_" + ObjectName;
                         WriteCSV(episodeName, logEpisode);
-                        string rewardName = PolicyType == WhichPolicy.Grasping ? "Grasp_RewardLog.csv" : "Release_RewardLog.csv";
+                        string rewardName = PolicyType == WhichPolicy.Grasping ? "Grasp_RewardLog_" + ObjectName : "Release_RewardLog_" + ObjectName;
                         WriteCSV(rewardName, logReward);
                         print("Learned Policy has been written to " + policyName);
                         print("Episode and reward values have been logged.");
@@ -430,7 +432,7 @@ public class QLearning : MonoBehaviour
 
     void WriteCSV<T>(string fileName, Dictionary<int, T> data)
     {
-        using (var writer = new StreamWriter(fileName))
+        using (var writer = new StreamWriter(fileName + ".csv"))
         {
             foreach (var pair in data)
             {

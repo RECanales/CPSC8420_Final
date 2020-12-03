@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44693613, g: 0.49682283, b: 0.5750286, a: 1}
+  m_IndirectSpecularColor: {r: 0.4469359, g: 0.49682266, b: 0.5750282, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1905,7 +1905,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &775038823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2044,7 +2044,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &816357064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2060,15 +2060,15 @@ MonoBehaviour:
   controller: {fileID: 1783497146}
   rewardDisplay: {fileID: 1290136573}
   stopButton: {fileID: 559819818}
-  scene_obj: {fileID: 1997137472}
-  PolicyType: 0
+  scene_obj: {fileID: 1204971131}
+  PolicyType: 1
   NUM_ACTIONS: 10
-  max_episode_steps: 1000
-  simulation_speed: 5
+  max_episode_steps: 20000
+  simulation_speed: 4
   gamma: 0.95
   eps: 1
   alpha: 0.1
-  max_iterations: 1000
+  max_iterations: 5000
   iteration_number: 0
   AnimationTime: 1
   waitTime: 1
@@ -3426,7 +3426,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1204971131}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.0019, y: 0.025, z: 0.025315523}
+  m_LocalPosition: {x: -0.0019, y: 0.025, z: 0.0455}
   m_LocalScale: {x: 0.05, y: 0.05, z: 0.05}
   m_Children: []
   m_Father: {fileID: 487820692}

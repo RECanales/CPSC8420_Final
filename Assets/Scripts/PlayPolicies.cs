@@ -21,8 +21,8 @@ public class PlayPolicies: MonoBehaviour
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
-        grasp_policy = LoadPolicy("Grasping_Policy.csv");
-        release_policy = LoadPolicy("Release_Policy.csv");
+		grasp_policy = LoadPolicy("Grasping_Policy_" + scene_obj.name + ".csv");
+        release_policy = LoadPolicy("Release_Policy_" + scene_obj.name + ".csv"); 
     }
 
     private void Update()
