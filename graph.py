@@ -16,8 +16,8 @@ alpha = 0.1
 policy = "Release"
 objectType = "Sphere"
 actions = 10
-#path = cwd + '/Release_RewardLog.csv'
 path = cwd + '/Release_EpisodeLog.csv'
+#path = cwd + '\Grasp_RewardLog.csv'
 data = np.loadtxt(path, delimiter=',', usecols = (0,1))
 plt.xlabel("Number of Iterations")
 plt.ylabel("Number of steps for the episode")
@@ -25,4 +25,4 @@ plt.ylabel("Number of steps for the episode")
 title = f"Iterations vs. the Episode Length for the Object {policy} policy learned"
 plt.title(title, fontsize=20)
 plt.plot(data[:,0],data[:,1])
-plt.savefig(cwd + '/Graphs/Grasping_Reward_Graph.png')
+#plt.savefig(cwd + '/Graphs/Grasping_Reward_Graph.png')
