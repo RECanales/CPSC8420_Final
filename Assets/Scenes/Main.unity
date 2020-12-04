@@ -1919,7 +1919,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   controller: {fileID: 1783497146}
-  scene_obj: {fileID: 1997137472}
+  scene_objects:
+  - {fileID: 1997137472}
+  - {fileID: 1204971131}
+  SceneObject: 0
   AnimationTime: 1
 --- !u!4 &775038824
 Transform:
@@ -2060,15 +2063,18 @@ MonoBehaviour:
   controller: {fileID: 1783497146}
   rewardDisplay: {fileID: 1290136573}
   stopButton: {fileID: 559819818}
-  scene_obj: {fileID: 1204971131}
-  PolicyType: 1
+  scene_objects:
+  - {fileID: 1997137472}
+  - {fileID: 1204971131}
+  PolicyType: 0
+  SceneObject: 0
   NUM_ACTIONS: 10
   max_episode_steps: 20000
   simulation_speed: 4
   gamma: 0.95
   eps: 1
   alpha: 0.1
-  max_iterations: 5000
+  max_iterations: 1000
   iteration_number: 0
   AnimationTime: 1
   waitTime: 1
@@ -3417,7 +3423,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1204971132
 Transform:
   m_ObjectHideFlags: 0

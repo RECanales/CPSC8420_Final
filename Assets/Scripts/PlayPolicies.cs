@@ -6,8 +6,11 @@ using System.IO;
 public class PlayPolicies: MonoBehaviour 
 {
     public GameObject controller;
-    Controller handControl;
-    public GameObject scene_obj;
+	[SerializeField]
+	List<GameObject> scene_objects;
+	public QLearning.WhichObject SceneObject = QLearning.WhichObject.Sphere;
+	Controller handControl;
+    GameObject scene_obj;
     bool playback = false;
     bool loop = false;
     Dictionary<int, int> grasp_policy = new Dictionary<int, int>(); // grasping policy
@@ -21,6 +24,13 @@ public class PlayPolicies: MonoBehaviour
     void Start()
     {
         handControl = controller.GetComponent<Controller>();
+
+		scene_obj = SceneObject == QLearning.WhichObject.Sphere ? scene_objects[0] : scene_objects[1];
+		if (SceneObject == QLearning.WhichObject.Sphere)
+			scene_objects[1].SetActive(false);
+		else
+			scene_objects[0].SetActive(false);
+
 		grasp_policy = LoadPolicy("Grasping_Policy_" + scene_obj.name + ".csv");
         release_policy = LoadPolicy("Release_Policy_" + scene_obj.name + ".csv"); 
     }

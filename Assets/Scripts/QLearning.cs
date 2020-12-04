@@ -9,14 +9,18 @@ public class QLearning : MonoBehaviour
 {
     public GameObject controller;
     public GameObject rewardDisplay, stopButton;
-    [Tooltip("Object in scene that the hand will be interacting with.")]
-    public GameObject scene_obj; // object being interacted with
+	[SerializeField]
+	List<GameObject> scene_objects;
     public enum WhichPolicy { Grasping, Releasing }; // pick which policy is being learned
+	public enum WhichObject { Sphere, Cube };
     [Tooltip("Which policy is being trained.")]
     public WhichPolicy PolicyType = WhichPolicy.Grasping;
+	public WhichObject SceneObject = WhichObject.Sphere;
     WhichPolicy CurrentPolicy = WhichPolicy.Grasping;
-    
-    Controller handControl;
+
+	GameObject scene_obj; // object being interacted with
+
+	Controller handControl;
     Vector3 original_obj_position;
     Quaternion original_obj_rotation;
 
@@ -71,6 +75,11 @@ public class QLearning : MonoBehaviour
             handControl.max_horizontal_travel * (int)(handControl.max_joint_rotation / handControl.rotate_speed);
         print("Number of states = " + NUM_STATES.ToString());
 
+		scene_obj = SceneObject == WhichObject.Sphere ? scene_objects[0] : scene_objects[1];
+		if (SceneObject == WhichObject.Sphere)
+			scene_objects[1].SetActive(false);
+		else
+			scene_objects[0].SetActive(false);
 		ObjectName = scene_obj.name;
 
 		// init all Q values to 0
