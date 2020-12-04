@@ -15,7 +15,7 @@ Click on *PlaybackPolicies* tab in the Hierarchy panel (Left of the game-scene a
 
 The *PlaybackPolicies* gameobject should be active (the box in the inspector on the right hand side is checked). Then hit the play button at the top-center of the screen. You should see the hand pick up a sphere, move, then release it over the target represented by a white "X". In this configuration, the program is just playing back the already learned policies to perform these tasks.
 
-You can also make the agent re-train the policies fo grasping and releasing (for the sphere) by doing the following (video [here](https://youtu.be/6Ay9ZXvs3MA):
+You can also make the agent re-train the policies fo grasping and releasing (for the sphere) by doing the following (video [here](https://youtu.be/6Ay9ZXvs3MA)):
 
 1. Uncheck the *PlaybackPolicies* gameobject. 
 2. Select the *QLearning* gameobject in the Hierarchy panel on the left. A new set of options should be available in the Inspector panel on the right.
