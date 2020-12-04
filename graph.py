@@ -16,13 +16,13 @@ alpha = 0.1
 policy = "Release"
 objectType = "Sphere"
 actions = 10
-path = cwd + '/Release_EpisodeLog.csv'
+path = cwd + '/Release_RewardLog_Cube.csv'
 #path = cwd + '\Grasp_RewardLog.csv'
 data = np.loadtxt(path, delimiter=',', usecols = (0,1))
 plt.xlabel("Number of Iterations")
-plt.ylabel("Number of steps for the episode")
-#plt.ylabel("Average reward collected")
-title = f"Iteration vs. Episode Length"
+#plt.ylabel("Number of steps for the episode")
+plt.ylabel("Average Reward")
+title = f"Iteration vs. Reward"
 plt.title(title, fontsize=20)
 plt.plot(data[:,0],data[:,1])
-plt.savefig(cwd + '/Graphs/Grasping_Reward_Graph.png')
+plt.savefig(cwd + '/Graphs/ReleaseReward_small_cube.png')
